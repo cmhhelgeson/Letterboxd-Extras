@@ -68,7 +68,7 @@
 			"matches": [ "https://letterboxd.com/*" ],
 			"js": [ "polyfill.js", "letterboxd-extras.user.js" ],
 			"run_at": "document_start"
-		}
+		},
 	],
 
 	"background": {

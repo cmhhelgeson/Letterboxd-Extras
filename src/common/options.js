@@ -5,7 +5,7 @@ document.body.classList.add(isFirefox ? "firefox" : "chrome");
 if (isChrome)
     var browser = chrome;
 
-let isAndroid = (navigator.userAgent.includes('Android'));
+let isAndroid = (window.navigator.userAgent.includes('Android'));
 let isPopup = window.location.search.includes('type=action');
 
 if ((isAndroid || isPopup) && isFirefox)
@@ -27,6 +27,10 @@ async function load() {
         await set();
     }
 }
+
+// Create the current language from settings or navigator.language
+let currentLanguage = options.hasOwnProperty('preferredLanguage') || navigator.language;
+console.log(currentLanguage)
 
 // Save
 function save() {
