@@ -657,7 +657,8 @@ if (isChrome) { var browser = chrome; }
 			mal: { state: 0, id: null, url: null, data: null, statistics: null, highest: 0 },
 
 			// AniList
-			al: { state: 0, id: null, url: null, data: null, highest: 0, num_ratings: 0 },
+			// Ensure that the values being passed are actually valid
+			anilistHelper: new AnilistHelper( this.addOveriewLink, this.helpers, this.appendRating ),
 
 			// SensCritique
 			sensCritique: { state: 0, id: null, url: null, data: null },
@@ -701,6 +702,7 @@ if (isChrome) { var browser = chrome; }
 				this.running = false;
 			},
 
+			// TODO: Determine if this is only running once or on each page load
 			async init() {
 				if (this.running) return;
 
@@ -718,8 +720,10 @@ if (isChrome) { var browser = chrome; }
 						const htmlEl = document.querySelector('html');
 						if (htmlEl.getAttribute('class').includes('no-mobile')) {
 							this.isMobile = false;
+							this.anilistHelper.isMobile = false;
 						} else {
 							this.isMobile = true;
+							this.anilistHelper.isMobile = true;
 						}
 					}
 				}
@@ -1226,54 +1230,13 @@ if (isChrome) { var browser = chrome; }
 									}
 
 									// Get AniList data
-									if (this.wiki != null && this.wiki.Anilist_ID != null && this.wiki.Anilist_ID.value != null && letterboxd.storage.get('al-enabled') === true) {
-										if (this.al.data == null && this.al.state < 1) {
-											this.wikiData.Anilist_ID = this.wiki.Anilist_ID.value;
-											this.al.id = this.wiki.Anilist_ID.value;
+									if (this.wiki && this.wiki.Anilist_ID && this.wiki.Anilist_ID.value != null && letterboxd.storage.get('al-enabled') === true) {
 
-											var url = 'https://graphql.anilist.co';
-											const query = letterboxd.helpers.getAniListQuery();
-											const options = {
-												method: 'POST',
-												headers: {
-													'content-type': 'application/json',
-													accept: 'application/json'
-												},
-												body: JSON.stringify({
-													query: query,
-													variables: { id: this.al.id }
-												})
-											};
+										if (this.anilistHelper.data === null && this.anilistHelper.loadState < Helper.LOAD_STATES["Loading"]) {
 
-											try {
-												this.al.state = 1;
-												browser.runtime.sendMessage({ name: 'GETDATA', type: 'JSON', url: url, options: options }, value => {
-													if (letterboxd.helpers.ValidateResponse('AniList API', value) == false) {
-														return;
-													}
-
-													const al = value.response;
-													if (al != null && al.data != null) {
-														this.al.data = al.data.Media;
-
-														if (this.al.data != null) {
-															this.al.url = this.al.data.siteUrl;
-															this.addLink(this.al.data.siteUrl);
-
-															this.al.state = 2;
-															this.addAL();
-														} else {
-															this.al.state = 3;
-														}
-													} else {
-														this.al.state = 3;
-														if (value.errors != null) { console.error(`Letterboxd Extras | AniList API Error: ${value.errors[0].message}`); } else { console.error(`Letterboxd Extras | AniList Unknown API Error. Status: ${value.status}`); }
-													}
-												});
-											} catch {
-												console.error('Letterboxd Extras | Unable to parse AniList URL');
-												this.al.state = 3;
-											}
+											this.anilistHelper.changeID(this.wiki.Anilist_ID.value)
+											// Function below should call equivalent of this.addAL();
+											this.anilistHelper.fetchData();
 										}
 									}
 
@@ -2754,6 +2717,77 @@ if (isChrome) { var browser = chrome; }
 				// Add Hover events
 				//* ***********************************************************
 				letterboxd.helpers.addTooltipEvents(section);
+			},
+
+			addOverviewLink(url, text, className) {
+
+				if (url == null || url == '') {
+					return;
+				}
+
+				// Check if already added
+				if (!this.linksAdded.includes(url)) {
+					this.linksAdded.push(url);
+					if (document.querySelector(`.${className}`)) {
+						return;
+					}
+
+					// Create Button Element
+					const button = letterboxd.helpers.createElement('a', {
+						class: `micro-button track-event ${className}`,
+						href: url
+					});
+					button.innerText = text;
+
+					if (letterboxd.storage.get('open-same-tab') != true) {
+						button.setAttribute('target', '_blank');
+					}
+
+					// Determine Placement
+					const order = [
+						'.tomato-button',
+						'.meta-button',
+						'.sens-button',
+						'.mubi-button',
+						'.filmaff-button',
+						'.simkl-button',
+						'.kinopoisk-button',
+						'.allo-button',
+						'.mal-button',
+						'.al-button',
+						'.anidb-button',
+						'.filmarks-button',
+						'.mojo-button',
+						'.wiki-button',
+						'.ddd-button'
+					];
+
+					const index = order.indexOf(`.${className}`);
+					// First Attempt
+					for (var i = index + 1; i < order.length; i++) {
+						var temp = document.querySelector(order[i]);
+						if (temp != null) {
+							temp.before(button);
+							return;
+						}
+					}
+
+					// Second Attempt
+					for (var i = index - 1; i >= 0; i--) {
+						var temp = document.querySelector(order[i]);
+						if (temp != null) {
+							temp.after(button);
+							return;
+						}
+					}
+
+					// Third Attempt
+					const buttons = document.querySelectorAll('.micro-button');
+					const lastButton = buttons[buttons.length - 1];
+					lastButton.after(button);
+					
+				}
+
 			},
 
 			addLink(url) {
@@ -5757,7 +5791,7 @@ if (isChrome) { var browser = chrome; }
 				}
 			},
 
-			createHistogramScore(letterboxd, type, rating, count, url, isMobile) {
+			createHistogramScore(type, rating, count, url) {
 				// The span that holds the score
 				let style = '';
 				if (letterboxd.overview.isMobile == true) {
@@ -7151,4 +7185,5 @@ function toggleLostFilms(event, letterboxd) {
 function removeFilters(event, letterboxd) {
 	// Run this before the page will be reloaded
 	letterboxd.storage.localSet('hide-lost-films', 'show');
+	console.log('test')
 }

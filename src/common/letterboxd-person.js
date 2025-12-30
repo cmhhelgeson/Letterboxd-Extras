@@ -115,6 +115,7 @@ class LetterboxdPerson {
 			if (value !== null && value.results !== null && value.results.bindings !== null && value.results.bindings.length > 0) {
 				this.wiki = value.results.bindings[0];
 				console.log(this.wiki)
+				console.log(this.wiki)
 				this.addWikiData();
 				this.addIMDbButton();
 				if (this.extensionStorage.get('wiki-link-enabled') === true) {
@@ -161,44 +162,6 @@ class LetterboxdPerson {
 		});
 	}
 
-	_hasBirthName() {
-
-		if (this.wiki.BirthName === undefined) {
-			return false;
-		}
-
-		return this.wiki.BirthName.value !== null
-
-	}
-
-	_hasBirthDate() {
-
-		if (this.wiki.BirthDate === undefined) {
-			return false;
-		}
-
-		return this.wiki.BirthDate.value !== null
-
-	}
-
-	_hasDeathDate() {
-		if (this.wiki.DeathDate === undefined) {
-			return false;
-		}
-
-		return this.wiki.DeathDate.value !== null
-	}
-
-	_hasYearsEnd() {
-
-		if (this.wiki.YearsEnd === undefined) {
-			return false;
-		}
-
-		return this.wiki.YearsEnd !== null;
-
-	}
-
 	addWikiData() {
 		if (document.querySelector('.extras-table')) return;
 
@@ -213,20 +176,20 @@ class LetterboxdPerson {
 		let name = null;
 		var birth = null;
 		let birthPlace = null;
-		if (this._hasBirthName()) {
+		if (this.wiki.BirthName && this.wiki.BirthName.value !== null) {
 			if (this.wiki.BirthName.value != this.wiki.itemLabel.value && this.wiki.BirthName.value != this.letterboxdName) {
 				name = this.wiki.BirthName.value;
 			}
 		}
-		if ( this._hasBirthDate() ) {//&& this.wiki.Date_Of_Birth_Precision.value >= 9) {
+		if (this.wiki.Date_Of_Birth && this.wiki.Date_Of_Birth.value !== null ) {//&& this.wiki.Date_Of_Birth_Precision.value >= 9) {
 			var birth = new Date(this.wiki.Date_Of_Birth.value).toLocaleDateString('en-UK');
 			if (isAlive == true) {
 				var age = this.extensionHelpers.calculateAge(new Date(this.wiki.Date_Of_Birth.value), new Date());
 				birth += ` (age ${age})`;
 			}
-			if (this.wiki.BirthCityLabel !== null && this.wiki.BirthCityLabel.value !== null) {
+			if (this.wiki.BirthCityLabel && this.wiki.BirthCityLabel.value !== null) {
 				birthPlace = this.wiki.BirthCityLabel.value;
-				if (this.wiki.BirthCountry !== null && this.wiki.BirthCountry.value !== null) {
+				if (this.wiki.BirthCountry && this.wiki.BirthCountry.value !== null) {
 					birthPlace += `, ${this.wiki.BirthCountry.value}`;
 				}
 			}
@@ -234,25 +197,25 @@ class LetterboxdPerson {
 		// Death date
 		var death = null;
 		let deathPlace = null;
-		if (this._hasDeathDate()) {//&& this.wiki.Date_Of_Death_Precision.value >= 9) {
+		if (this.wiki.Date_Of_Death && this.wiki.Date_Of_Death.value !== null ) {//&& this.wiki.Date_Of_Death_Precision.value >= 9) {
 			var death = new Date(this.wiki.Date_Of_Death.value).toLocaleDateString('en-UK');
 
 			var age = this.extensionHelpers.calculateAge(new Date(this.wiki.Date_Of_Birth.value), new Date(this.wiki.Date_Of_Death.value));
 			death += ` (aged ${age})`;
 
-			if (this.wiki.DeathCityLabel !== null && this.wiki.DeathCityLabel.value !== null) {
+			if (this.wiki.DeathCityLabel && this.wiki.DeathCityLabel.value !== null) {
 				deathPlace = this.wiki.DeathCityLabel.value;
-				if (this.wiki.DeathCountry !== null && this.wiki.DeathCountry.value !== null) {
+				if (this.wiki.DeathCountry && this.wiki.DeathCountry.value !== null) {
 					deathPlace += `, ${this.wiki.DeathCountry.value}`;
 				}
 			}
 		}
 		// Years Active
-		if (this.wiki.Years_Start !== null && this.wiki.Years_Start.value !== null) {
+		if (this.wiki.Years_Start && this.wiki.Years_Start.value !== null) {
 			var yearsActive = new Date(this.wiki.Years_Start.value).toLocaleDateString('en-UK', this.extensionHelpers.getDateOptions(9));
-			if (this._hasYearsEnd()) {
+			if (this.wiki.Years_End && this.wiki.Years_End.value !== null) {
 				yearsActive += `–${new Date(this.wiki.Years_End.value).toLocaleDateString('en-UK', this.extensionHelpers.getDateOptions(9))}`;
-			} else if (this.wiki.Date_Of_Death !== null && this.wiki.Date_Of_Death.value !== null && this.wiki.Date_Of_Death_Precision.value >= 9) {
+			} else if (this.wiki.Date_Of_Death && this.wiki.Date_Of_Death.value !== null && this.wiki.Date_Of_Death_Precision.value >= 9) {
 				yearsActive += `–${new Date(this.wiki.Date_Of_Death.value).toLocaleDateString('en-UK', this.extensionHelpers.getDateOptions(9))}`;
 			} else {
 				yearsActive += '–present';
@@ -310,7 +273,7 @@ class LetterboxdPerson {
 	addWikiButton() {
 		if (document.querySelector('.wiki-button')) return;
 
-		if (this.wiki.Wikipedia !== null && this.wiki.Wikipedia.value !== null) {
+		if (this.wiki.Wikipedia && this.wiki.Wikipedia.value !== null) {
 			var url = this.wiki.Wikipedia.value;
 		} else if (this.wiki.WikipediaEN !== null && this.wiki.WikipediaEN.value !== null) {
 			var url = this.wiki.WikipediaEN.value;
@@ -332,7 +295,7 @@ class LetterboxdPerson {
 	addIMDbButton() {
 		if (document.querySelector('.imdb-button')) return;
 
-		if (this.wiki.IMDb_ID !== null && this.wiki.IMDb_ID.value !== null) {
+		if (this.wiki.IMDb_ID && this.wiki.IMDb_ID.value !== null) {
 			var url = this.wiki.IMDb_ID.value;
 		} else {
 			return;
