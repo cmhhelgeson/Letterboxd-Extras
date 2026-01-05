@@ -65,7 +65,7 @@
 	"content_scripts": [
 		{
 			"matches": [ "https://letterboxd.com/*" ],
-			"js": [ "polyfill.js", "letterboxd-person.js", "helpers/Helper.js", "helpers/AnilistHelper.js", "letterboxd-extras.user.js" ],
+			"js": [ "polyfill.js", "letterboxd-person.js", "anilist-helper.js", "letterboxd-extras.user.js" ],
 			"run_at": "document_start"
 		}
 	],
