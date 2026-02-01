@@ -2,6 +2,7 @@
 
 import { LetterboxdPerson } from './letterboxd-person';
 import { LetterboxdGeneral } from './letterboxd-general';
+import { AnilistHelper } from './helpers/AnilstHelper';
 
 GM_addStyle(`
 		.section-heading-extras{
@@ -672,6 +673,8 @@ const letterboxd = {
 
 		// AniList
 		al: { state: 0, id: null, url: null, data: null, highest: 0, num_ratings: 0 },
+
+		anilistHelper: null, 
 
 		// SensCritique
 		sensCritique: { state: 0, id: null, url: null, data: null },
@@ -1362,7 +1365,7 @@ const letterboxd = {
 									}
 
 									// Get AniList data
-									if (this.wiki != null && this.wiki.Anilist_ID != null && this.wiki.Anilist_ID.value != null && letterboxd.storage.get('al-enabled') === true) {
+									if (this.wiki != null && this.wiki.Anilist_ID != null && this.wiki.Anilist_ID.value != null && letterboxd.storage.get('anilist-enabled') === true) {
 										if (this.al.data == null && this.al.state < 1) {
 											this.wikiData.Anilist_ID = this.wiki.Anilist_ID.value;
 											this.al.id = this.wiki.Anilist_ID.value;
@@ -2946,7 +2949,7 @@ const letterboxd = {
 					className = "mojo-button";
 				} else if (url.includes("anilist")) {
 					text = "AL";
-					className = "al-button";
+					className = "anilist-button";
 				} else if (url.includes("myanimelist")) {
 					text = "MAL";
 					className = "mal-button";
@@ -3008,7 +3011,7 @@ const letterboxd = {
 					'.kinopoisk-button',
 					'.allo-button',
 					'.mal-button',
-					'.al-button',
+					'.anilist-button',
 					'.anidb-button',
 					'.filmarks-button',
 					'.mojo-button',
@@ -3605,7 +3608,7 @@ const letterboxd = {
 		},
 
 		addAL() {
-			if (document.querySelector('.al-ratings')) return;
+			if (document.querySelector('.anilist-ratings')) return;
 
 			if (!document.querySelector('.sidebar')) return;
 
@@ -3636,7 +3639,7 @@ const letterboxd = {
 			// Create and Add
 			// Add the section to the page
 			const scoreSection = letterboxd.helpers.createElement('section', {
-				class: 'section ratings-histogram-chart al-ratings ratings-extras extras-chart'
+				class: 'section ratings-histogram-chart anilist-ratings ratings-extras extras-chart'
 			});
 
 			// Add the Header
@@ -3668,24 +3671,24 @@ const letterboxd = {
 			var showDetails = null;
 			if (this.isMobile) {
 				// Add the Show Details button
-				showDetails = letterboxd.helpers.createShowDetailsButton("al", "al-score-details");
+				showDetails = letterboxd.helpers.createShowDetailsButton("anilist", "anilist-score-details");
 				scoreSection.append(showDetails);
 			}
 
-			scoreSection.append(letterboxd.helpers.createHistogramScore(letterboxd, "al", this.al.score, this.al.num_ratings, this.al.data.siteUrl + '/reviews', this.isMobile));
-			scoreSection.append(letterboxd.helpers.createHistogramGraph(letterboxd, "al", "", this.al.num_ratings, this.al.data.stats.scoreDistribution, this.al.data.stats.scoreDistribution[ii], this.al.highest));
+			scoreSection.append(letterboxd.helpers.createHistogramScore(letterboxd, "anilist", this.al.score, this.al.num_ratings, this.al.data.siteUrl + '/reviews', this.isMobile));
+			scoreSection.append(letterboxd.helpers.createHistogramGraph(letterboxd, "anilist", "", this.al.num_ratings, this.al.data.stats.scoreDistribution, this.al.data.stats.scoreDistribution[ii], this.al.highest));
 
 			// Add the tooltip as text for mobile
 			var score = scoreSection.querySelector(".average-rating .tooltip");
 			var tooltip = "";
 			if (score != null) {
 				tooltip = score.getAttribute('data-original-title');
-				letterboxd.helpers.createDetailsText('al', scoreSection, tooltip, this.isMobile);
+				letterboxd.helpers.createDetailsText('anilist', scoreSection, tooltip, this.isMobile);
 			}
 
 			// Append to the sidebar
 			//*****************************************************************
-			this.appendRating(scoreSection, 'al-ratings');
+			this.appendRating(scoreSection, 'anilist-ratings');
 
 			// Add the hover events
 			//*****************************************************************
@@ -3904,7 +3907,7 @@ const letterboxd = {
 			var order = [
 				'.imdb-ratings',
 				'.mal-ratings',
-				'.al-ratings',
+				'.anilist-ratings',
 				'.allocine-ratings',
 				'.tomato-ratings',
 				'.meta-ratings',
@@ -5477,26 +5480,6 @@ const letterboxd = {
 			return headers;
 		},
 
-		getAniListQuery() {
-			var query = `
-					query ($id: Int!) {
-						Media(id: $id, type: ANIME) {
-							averageScore
-							meanScore
-							popularity
-							stats {
-								scoreDistribution {
-								score
-								amount
-								}
-							}
-							siteUrl
-							}
-					}
-				`;
-			return query;
-		},
-
 		getSensFilmQuery() {
 			var query = `
 					query ($id: Int!) {
@@ -6113,13 +6096,13 @@ const letterboxd = {
 			if (rating != "N/A") {
 				// Convert the score if needed
 				if (convertRatings === true) {
-					if (type == "al") {
+					if (type == "anilist") {
 						rating = (Number(rating) / 20).toFixed(1);
 					} else {
 						rating = (Number(rating) / 2).toFixed(1);
 					}
 					suffix = "/5";
-				} else if (type == "al") {
+				} else if (type == "anilist") {
 					suffix = "/100";
 				} else if (type == "allocine") {
 					if (convert10Point) {
@@ -6147,7 +6130,7 @@ const letterboxd = {
 
 			if (rating == "N/A") {
 				scoreElement.innerText = "N/A";
-			} else if (type == "al" && convertRatings == false) {
+			} else if (type == "anilist" && convertRatings == false) {
 				scoreElement.innerText = rating + "%";
 			} else {
 				scoreElement.innerText = rating;
@@ -6193,7 +6176,7 @@ const letterboxd = {
 				if (type == "mal") {
 					var voteCount = votes[ii].votes;
 					var percentage = votes[ii].percentage;
-				} else if (type == "al") {
+				} else if (type == "anilist") {
 					var voteCount = votes[ii].amount;
 					var percentage = (voteCount / count * 100).toFixed(1);
 				} else {
@@ -6209,7 +6192,7 @@ const letterboxd = {
 
 				// Determine Suffixes
 				var ratingSuffix = letterboxd.overview.ratingsSuffix;
-				if (type == "al" && letterboxd.storage.get('convert-ratings') === false) {
+				if (type == "anilist" && letterboxd.storage.get('convert-ratings') === false) {
 					ratingSuffix = ['10/100', '20/100', '30/100', '40/100', '50/100', '60/100', '70/100', '80/100', '90/100', '100/100'];
 				} else if (type == "allocine") {
 					ratingSuffix = ['0-★', '★', '★★', '★★★', '★★★★', '★★★★★'];
@@ -7226,6 +7209,10 @@ if (typeof LetterboxdPerson !== 'undefined') {
 
 if (typeof LetterboxdGeneral !== 'undefined') {
 	letterboxd.general = new LetterboxdGeneral(letterboxd.storage, letterboxd.helpers);
+}
+
+if (typeof AnilistHelper !== 'undefined') {
+	letterboxd.overview.anilistHelper = new AnilistHelper(letterboxd.storage, letterboxd.helpers)
 }
 
 letterboxd.storage.init();
