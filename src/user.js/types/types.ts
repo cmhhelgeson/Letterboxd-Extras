@@ -27,6 +27,23 @@ export type SourceIdentifier =
 	'bluray' |
 	'ebert'
 
+// Reply the background script sends back for every `{ name: 'GETDATA' }` message
+export interface GetDataResponse<T> {
+	response: T | null
+}
+
+// A single bound column in a SPARQL result row
+export interface SparqlValue {
+	value: string | null
+}
+
+// Body of a WikiData SPARQL query; T is the row shape, with unbound columns left optional
+export interface SparqlResults<T> {
+	results: {
+		bindings: T[]
+	}
+}
+
 enum MoveRatingState {
 	UNMOVED,
 	MOVED,
@@ -52,7 +69,7 @@ export interface StorageObject {
 	initLocal: () => void,
 	get: (key: string) => any;
 	set: (key: string, value: string) => void;
-	localGet: (key: string) => string
-	localSet: (key: string, value: string) => Promise<void>
+	localGet: (key: string) => any
+	localSet: (key: string, value: unknown) => Promise<void>
 
 }
