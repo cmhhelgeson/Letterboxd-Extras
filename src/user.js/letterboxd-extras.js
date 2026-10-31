@@ -2289,7 +2289,7 @@ const letterboxd = {
 			return path;
 		},
 
-		createAllocineCriticScore(letterboxd, type, rating, count, reviewCount, url, isMobile) {
+		createAllocineCriticScore(type, rating, count, reviewCount, url, isMobile) {
 			// The span that holds the score
 			var style = "display: inline-block; margin-right: 5px;";
 			if (type == "ratings-style") {
@@ -2300,7 +2300,7 @@ const letterboxd = {
 			if (type == "filmarks")
 				className = 'filmarks';
 
-			const scoreSpan = letterboxd.helpers.createElement('span', {
+			const scoreSpan = this.createElement('span', {
 				class: className,
 				style: style
 			});
@@ -2330,7 +2330,7 @@ const letterboxd = {
 				style = 'line-height: 28px; width: 100%; margin-left: 0px !important;';
 			}
 
-			const scoreElement = letterboxd.helpers.createElement('a', {
+			const scoreElement = this.createElement('a', {
 				class: 'tooltip display-rating -highlight allocine-critic-score tooltip-extra',
 				style: style,
 				href: url,

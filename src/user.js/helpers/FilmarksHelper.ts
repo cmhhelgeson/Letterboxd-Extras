@@ -192,9 +192,7 @@ export class FilmarksHelper extends Helper {
 			style: 'position: relative; display: block;'
 		});
 
-		// createAllocineCriticScore reads the helpers and storage off the `letterboxd` object it is given
-		const letterboxd = { helpers: this.helpers, storage: this.storage };
-		ratingSpan.append(this.helpers.createAllocineCriticScore(letterboxd, 'filmarks', this.rating, markCount, null, this.linkURL, this.pageState.isMobile));
+		ratingSpan.append(this.helpers.createAllocineCriticScore('filmarks', this.rating, markCount, null, this.linkURL, this.pageState.isMobile));
 		ratingSpan.append(this.helpers.createDynamicStars('filmarks', this.rating));
 		section.append(ratingSpan);
 

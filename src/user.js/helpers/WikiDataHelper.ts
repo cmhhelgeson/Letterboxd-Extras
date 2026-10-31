@@ -106,7 +106,10 @@ interface BuildQueryOptions {
 	/** Variables to select, without the leading '?'. */
 	select: string[]
 	distinct?: boolean
-	/** The body of the WHERE clause. */
+	/** The body of the WHERE clause. 
+	 *  Unlike SQL, WHERE clauses are mandatory in SPARQL.
+	 *  WHERE clauses describe a pattern of relations
+	 *  whereas filter is more like a traditional WHERE in SQL */
 	where: string
 	/** Extra spacing between the select list and WHERE, kept so the query matches the hand-written original. */
 	selectPadding?: string
@@ -115,6 +118,8 @@ interface BuildQueryOptions {
 	/** Variables to group by. */
 	groupBy?: string[]
 }
+
+type WikiDataPrefix = 'p' | 'ps' | 'psv' | 'pq' | 'wdt' | 'wd' | 'wikibase' | 'schema' | 'bd';
 
 export interface WikiDataRequest {
 	url: string
@@ -236,13 +241,13 @@ function getDeprecatedRankFilter( statementVar: string ): string {
 }
 
 /**
- * Requests server-side labels for the query.
+ * Requests server-side labels for the query, in the viewer's language first.
  *
- * @param [languages] - The wikibase:language value.
+ * @param [languages] - Fallback language codes, tried in order after [AUTO_LANGUAGE].
  */
-function getLabelService( languages = '[AUTO_LANGUAGE],en' ): string {
+function getLabelService( languages: string[] = [ 'en' ] ): string {
 
-	return `  SERVICE wikibase:label { bd:serviceParam wikibase:language "${languages}". }\n`;
+	return `  SERVICE wikibase:label { bd:serviceParam wikibase:language "${[ '[AUTO_LANGUAGE]', ...languages ].join( ',' )}". }\n`;
 
 }
 
@@ -642,7 +647,7 @@ function getPersonQuery( params: WikiDataQueryParams & { isPerson: true } ): str
 	const statementVar = 'statement0';
 
 	const where =
-		getLabelService( '[AUTO_LANGUAGE],mul,en' ) +
+		getLabelService( [ 'mul', 'en' ] ) +
 		'  \n' +
 		`  ?item p:P${pid} ?${statementVar}.\n` +
 		`  ?${statementVar} ps:P${pid} "${params.tmdbId}".\n` +

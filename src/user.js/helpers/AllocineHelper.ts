@@ -48,7 +48,6 @@ export class AllocineHelper extends Helper {
 	urlUser: string | null;
 	urlCritic: string | null;
 
-	/** Held until both requests are back, then combined into `data`. */
 	userPage: Document | null;
 	criticPage: Document | null;
 
@@ -120,7 +119,6 @@ export class AllocineHelper extends Helper {
 
 	}
 
-	/** Populates the sidebar once both the user and critic pages have arrived. */
 	_onPageLoaded() {
 
 		if (this.loadState === LOAD_STATES['Failure'] || this.userPage === null || this.criticPage === null) {
@@ -244,29 +242,21 @@ export class AllocineHelper extends Helper {
 
 	}
 
-	/** createAllocineCriticScore reads the helpers and storage off the `letterboxd` object it is given. */
-	_getLetterboxdContext() {
-
-		return { helpers: this.helpers, storage: this.storage };
-
-	}
-
 	/** Critic and user scores side by side, each with stars and no histogram. */
 	_appendRatingsStyle(section: HTMLElement) {
 
 		const { isMobile } = this.pageState;
-		const letterboxd = this._getLetterboxdContext();
 
 		if (this.storage.get('allocine-critic-enabled') === true) {
 			const criticSpan = this._createRatingsStyleSpan('allocine-critic-score', 'Critics');
-			criticSpan.append(this.helpers.createAllocineCriticScore(letterboxd, 'ratings-style', this.critic.rating, this.critic.num_ratings, null, this.urlCritic, isMobile));
+			criticSpan.append(this.helpers.createAllocineCriticScore('ratings-style', this.critic.rating, this.critic.num_ratings, null, this.urlCritic, isMobile));
 			criticSpan.append(this.helpers.createDynamicStars('allocine-ratings', this.critic.rating));
 			section.append(criticSpan);
 		}
 
 		if (this.storage.get('allocine-users-enabled') === true) {
 			const userSpan = this._createRatingsStyleSpan('allocine-user-score', 'Users');
-			userSpan.append(this.helpers.createAllocineCriticScore(letterboxd, 'ratings-style', this.user.rating, this.user.num_ratings, this.user.num_reviews, this.urlUser, isMobile));
+			userSpan.append(this.helpers.createAllocineCriticScore('ratings-style', this.user.rating, this.user.num_ratings, this.user.num_reviews, this.urlUser, isMobile));
 			userSpan.append(this.helpers.createDynamicStars('allocine-ratings', this.user.rating));
 			section.append(userSpan);
 		}
@@ -298,7 +288,6 @@ export class AllocineHelper extends Helper {
 	_appendHistogramStyle(section: HTMLElement) {
 
 		const { isMobile } = this.pageState;
-		const letterboxd = this._getLetterboxdContext();
 
 		const buttonDiv: HTMLElement = this.helpers.createElement('div', {
 			class: 'toggle-button-holder allocine-buttons'
@@ -339,7 +328,7 @@ export class AllocineHelper extends Helper {
 			class: 'allocine-critic-score toggle-score-display',
 			style: 'position: relative; display: block; height: 44px; display:none; margin-top: 5px;'
 		});
-		criticSpan.append(this.helpers.createAllocineCriticScore(letterboxd, 'allocine', this.critic.rating, this.critic.num_ratings, null, this.urlCritic, isMobile));
+		criticSpan.append(this.helpers.createAllocineCriticScore('allocine', this.critic.rating, this.critic.num_ratings, null, this.urlCritic, isMobile));
 		criticSpan.append(this.helpers.createDynamicStars('allocine-critic', this.critic.rating));
 		section.append(criticSpan);
 
