@@ -1,5 +1,7 @@
 import { LOAD_STATES } from '../constants';
 import { Helper } from './Helper';
+import { ChartSection } from '../components/ChartSection';
+import { createElement } from '../components/dom';
 
 export class MubiHelper extends Helper {
 
@@ -136,29 +138,32 @@ export class MubiHelper extends Helper {
 		// Add to Letterboxd
 		//* **************************************************************
 		// Add the section to the page
-		const logoSvg = this.helpers.createElement('span', {}, {
+		const logoSvg = createElement('span', {}, {
 			height: '14.4px',
 			width: '48px',
 			position: 'absolute',
 			'background-image': 'url("' + browser.runtime.getURL("images/mubi-logo.svg") + '")'
 		});
 
-		const section = this._createChartSection(
-			{
+		const section = ChartSection({
+			selectorPrefix: this.selectorPrefix,
+			logoProps: {
 				svg: logoSvg,
 				href: this.url
-			}
-		);
+			},
+			isMobile: this.pageState.isMobile,
+			storage: this.storage
+		});
 
 		// Score
 		//* **************************************************************
 		// Create a span that holds the entire
-		const mubiSpan = this.helpers.createElement('span', {}, {
+		const mubiSpan = createElement('span', {}, {
 			display: 'block',
 			'margin-bottom': '10px',
 			'margin-top': '5px'
 		});
-		const starSvg = this.helpers.createElement('span', {}, {
+		const starSvg = createElement('span', {}, {
 			height: '18.2px',
 			width: '19.2833px',
 			display: 'inline-block',

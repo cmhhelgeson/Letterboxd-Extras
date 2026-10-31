@@ -1,5 +1,6 @@
 import { LOAD_STATES } from './constants';
 import { getWikiDataLocaleParams, getWikiDataRequest } from './helpers/WikiDataHelper';
+import { createElement } from './components/dom';
 
 export class LetterboxdPerson {
 
@@ -158,15 +159,15 @@ export class LetterboxdPerson {
 		}
 
 		// Create filter element
-		const li = this.extensionHelpers.createElement('li', {
+		const li = createElement('li', {
 			class: `extras-lost-filter divider-line -inset`
 		});
-		const a = this.extensionHelpers.createElement('span', {
+		const a = createElement('span', {
 			class: 'item'
 		});
 		li.append(a);
 		a.innerText = 'Hide lost films';
-		const i = this.extensionHelpers.createElement('i', {
+		const i = createElement('i', {
 			class: 'ir s icon'
 		});
 		a.prepend(i);
@@ -319,7 +320,7 @@ export class LetterboxdPerson {
 		if (url == '') return;
 
 		// Create Button Element
-		const button = this.extensionHelpers.createElement('a', {
+		const button = createElement('a', {
 			class: 'micro-button extras-button wiki-button',
 			href: url
 		});
@@ -343,7 +344,7 @@ export class LetterboxdPerson {
 		url = `https://www.imdb.com/name/${url}`;
 
 		// Create Button Element
-		const button = this.extensionHelpers.createElement('a', {
+		const button = createElement('a', {
 			class: 'micro-button extras-button imdb-button',
 			href: url
 		});
@@ -428,16 +429,16 @@ export class LetterboxdPerson {
 
 		// Create custom heading if one does not already exist
 		if (document.querySelector('.filtered-message') == null) {
-			const extrasuiHeader = this.extensionHelpers.createElement('section', {
+			const extrasuiHeader = createElement('section', {
 				class: 'ui-block-header filtered-message body-text -small message-text extras-filter-header'
 			}, {
 				display: 'none'
 			});
-			const extrasuiHeading = this.extensionHelpers.createElement('p', {
+			const extrasuiHeading = createElement('p', {
 				class: 'ui-block-heading'
 			});
 			extrasuiHeader.append(extrasuiHeading);
-			const removeLink = this.extensionHelpers.createElement('a', {
+			const removeLink = createElement('a', {
 				class: 'js-film-filter-remover',
 				href: '#'
 			});

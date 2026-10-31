@@ -1,6 +1,9 @@
 
 import { LOAD_STATES } from '../constants';
 import { Helper } from './Helper';
+import { ChartSectionElement, ChartSectionHeader, SectionShowDetailsButton } from '../components/ChartSection';
+import { Histogram } from '../components/Histogram';
+import { createElement } from '../components/dom';
 
 
 /**
@@ -92,24 +95,24 @@ export class AnilistHelper extends Helper {
 
 		// Create and Add
 		// Add the section to the page
-		const scoreSection = this._createChartSectionElement(true);
-		const heading = this._createChartSectionHeader();
+		const scoreSection = ChartSectionElement({ selectorPrefix: this.selectorPrefix, isChart: true });
+		const heading = ChartSectionHeader();
 		scoreSection.append(heading);
 
-		const logoHolder = this.helpers.createElement('a', {
+		const logoHolder = createElement('a', {
 			class: 'logo-holder-anilist',
 			style: 'width: 100%;',
 			href: `${this.data.siteUrl}/stats`
 		});
 		heading.append(logoHolder);
 
-		const logo = this.helpers.createElement('span', {
+		const logo = createElement('span', {
 			class: 'logo-anilist',
 			style: 'height: 20px; width: 20px; background-image: url("https://graphql.anilist.co/img/icons/icon.svg");'
 		});
 		logoHolder.append(logo);
 
-		const logoText = this.helpers.createElement('span', {
+		const logoText = createElement('span', {
 			class: 'text-anilist',
 			style: 'vertical-align: super;'
 		});
@@ -117,19 +120,24 @@ export class AnilistHelper extends Helper {
 		logoHolder.append(logoText);
 
 		if (isMobile) {
-			scoreSection.append(this._createShowDetailsButton());
+			scoreSection.append(SectionShowDetailsButton({
+				selectorPrefix: this.selectorPrefix,
+				storage: this.storage,
+				isMobile: this.pageState.isMobile
+			}));
 		}
 
-		scoreSection.append(this.helpers.createHistogram(
-			this.storage,
-			'anilist',
-			this.url + '/stats',
-			this.score,
-			this.num_ratings,
-			this.data.stats.scoreDistribution,
-			this.data.stats.scoreDistribution[ii],
-			this.highest
-		));
+		scoreSection.append(Histogram({
+			storage: this.storage,
+			type: 'anilist',
+			url: this.url + '/stats',
+			rating: this.score,
+			count: this.num_ratings,
+			votes: this.data.stats.scoreDistribution,
+			percents: this.data.stats.scoreDistribution[ii],
+			highest: this.highest,
+			ratingsSuffix: this.helpers.getRatingsSuffix()
+		}));
 
 		// Add the tooltip as text for mobile
 		const score = scoreSection.querySelector('.averagerating.tooltip');

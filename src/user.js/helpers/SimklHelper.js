@@ -1,5 +1,7 @@
 import { LOAD_STATES } from '../constants';
 import { Helper } from './Helper';
+import { ChartSection } from '../components/ChartSection';
+import { createElement } from '../components/dom';
 
 export class SimklHelper extends Helper {
 
@@ -88,16 +90,22 @@ export class SimklHelper extends Helper {
 		// Add to Letterboxd
 		//* **************************************************************
 		// Add the section to the page
-		const section = this._createChartSection({
-			href: this.linkURL,
-			style: `position: absolute; background-image: url("${browser.runtime.getURL('images/simkl-logo.png')}");`
-		}, 'height: 13px');
+		const section = ChartSection({
+			selectorPrefix: this.selectorPrefix,
+			logoProps: {
+				href: this.linkURL,
+				style: `position: absolute; background-image: url("${browser.runtime.getURL('images/simkl-logo.png')}");`
+			},
+			headerStyle: 'height: 13px',
+			isMobile: this.pageState.isMobile,
+			storage: this.storage
+		});
 
 		const { isMobile } = this.pageState;
 
 		// Score
 		//* **************************************************************
-		const container = this.helpers.createElement('span', {}, {
+		const container = createElement('span', {}, {
 			'display': 'block',
 			'margin-bottom': '10px'
 		});
@@ -107,7 +115,7 @@ export class SimklHelper extends Helper {
 		const { tooltip, score, totalScore } = this._getAverageScore(this.rating);
 
 		// The span that holds the score
-		const span = this.helpers.createElement('a', {
+		const span = createElement('a', {
 			class: 'simkl-box tooltip tooltip-extra',
 			'href': this.linkURL,
 			'data-original-title': tooltip
@@ -117,7 +125,7 @@ export class SimklHelper extends Helper {
 		});
 
 		// The element that is the score itself
-		const text = this.helpers.createElement('span', {
+		const text = createElement('span', {
 			class: 'display-rating -highlight simkl-score'
 		});
 
@@ -128,7 +136,7 @@ export class SimklHelper extends Helper {
 		span.append(text);
 
 		// Add the element /10 or /5 depending on score
-		const scoreTotal = this.helpers.createElement('p', {
+		const scoreTotal = createElement('p', {
 			style: 'display: inline-block; font-size: 10px; color: darkgray; margin-bottom: 0px;'
 		});
 		scoreTotal.innerText = totalScore;

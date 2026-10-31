@@ -1,4 +1,6 @@
 import { LOAD_STATES } from '../constants';
+import { ShowDetailsButton } from '../components/ShowDetailsButton';
+import { createElement } from '../components/dom';
 
 const rankingOrder = [
     '.imdb-ranking',
@@ -217,11 +219,11 @@ export class RankingHelper {
         
         // Lets add it to the page
         //***************************************************************
-        const div = this.helpers.createElement('div', {
+        const div = createElement('div', {
             class: `production-statistic ${prefix}-ranking extras-ranking`
         });
 
-        const a = this.helpers.createElement('a', {
+        const a = createElement('a', {
             class: 'tooltip tooltip-extra',
             href: url
         });
@@ -236,7 +238,7 @@ export class RankingHelper {
 
         // Logo
         if (data.icon != null && data.icon != '') {
-            const logoSpan = this.helpers.createElement('span', {
+            const logoSpan = createElement('span', {
                 class: 'extras-ranking-icon',
             });
             logoSpan.innerText = data.icon
@@ -249,7 +251,7 @@ export class RankingHelper {
                 imageUrl = browser.runtime.getURL(`/images/${data.image}`);
             }
 
-            const logoSpan = this.helpers.createElement('span', {
+            const logoSpan = createElement('span', {
                 class: 'extras-ranking-image',
                 style: `background: url('${imageUrl}')`
             });
@@ -258,7 +260,7 @@ export class RankingHelper {
         
         // Rank
         if (data.isRanked) {
-            const labelSpan = this.helpers.createElement('span', {
+            const labelSpan = createElement('span', {
                 class: 'label'
             });
             labelSpan.innerText = rank;
@@ -267,12 +269,12 @@ export class RankingHelper {
 
         // Add the tooltip as text for mobile
         if (this.pageState.isMobile) {
-            const detailsSpan = this.helpers.createElement('span', {
+            const detailsSpan = createElement('span', {
                 class: 'mobile-ranking-details',
                 style: 'display:none'
             });
 
-            const detailsText = this.helpers.createElement('p', {
+            const detailsText = createElement('p', {
             });
             detailsText.innerText = tooltip;
             detailsSpan.append(detailsText);
@@ -295,7 +297,7 @@ export class RankingHelper {
 		// Create the ul element if needed
         let extrasStats = document.querySelector('.extras-statistics-list')
         if (extrasStats == null) {
-            extrasStats = this.helpers.createElement('div', {
+            extrasStats = createElement('div', {
                 class: 'production-statistic-list extras-statistics-list'
             });
 
@@ -303,13 +305,17 @@ export class RankingHelper {
                 extrasStats.classList.add('extras-ranking-mobile');
 
                 // Div to hold both the list and show details button
-                const mobileHolder = this.helpers.createElement('div', {
+                const mobileHolder = createElement('div', {
                     class: 'production-statistic-mobile-holder'
                 });
                 mobileHolder.append(extrasStats);
 
                 // Add the Show Details button
-                const showDetails = this.helpers.createShowDetailsButton('film-stats', 'mobile-ranking-details');
+                const showDetails = ShowDetailsButton({
+                	name: 'film-stats',
+                	target: 'mobile-ranking-details',
+                	storage: this.storage
+                });
                 showDetails.className = 'film-stats-show-details';
                 showDetails.setAttribute('target-parent', 'extras-ranking-mobile');
                 mobileHolder.prepend(showDetails);

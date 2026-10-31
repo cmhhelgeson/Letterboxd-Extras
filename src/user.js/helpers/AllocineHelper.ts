@@ -2,6 +2,12 @@
 import { LOAD_STATES } from '../constants';
 import { PageState, StorageObject } from '../types/types';
 import { Helper } from './Helper';
+import { AllocineCriticScore } from '../components/AllocineCriticScore';
+import { ChartSection } from '../components/ChartSection';
+import { DynamicStars } from '../components/DynamicStars';
+import { Histogram } from '../components/Histogram';
+import { ToggleButton } from '../components/ToggleButton';
+import { createElement } from '../components/dom';
 
 /** Which kind of AlloCine page the WikiData ID refers to. */
 export type AllocineMediaType = 'FILM' | 'TV';
@@ -149,13 +155,16 @@ export class AllocineHelper extends Helper {
 			return;
 		}
 
-		const section: HTMLElement = this._createChartSection(
-			{
+		const section: HTMLElement = ChartSection({
+			selectorPrefix: this.selectorPrefix,
+			logoProps: {
 				href: this.linkURL,
 				style: LOGO_STYLE
 			},
-			'height: 15px !important;'
-		);
+			headerStyle: 'height: 15px !important;',
+			isMobile: this.pageState.isMobile,
+			storage: this.storage
+		});
 
 		if (this.storage.get('allocine-style') === 'ratings') {
 			this._appendRatingsStyle(section);
@@ -249,15 +258,31 @@ export class AllocineHelper extends Helper {
 
 		if (this.storage.get('allocine-critic-enabled') === true) {
 			const criticSpan = this._createRatingsStyleSpan('allocine-critic-score', 'Critics');
-			criticSpan.append(this.helpers.createAllocineCriticScore('ratings-style', this.critic.rating, this.critic.num_ratings, null, this.urlCritic, isMobile));
-			criticSpan.append(this.helpers.createDynamicStars('allocine-ratings', this.critic.rating));
+			criticSpan.append(AllocineCriticScore({
+				type: 'ratings-style',
+				rating: this.critic.rating,
+				count: this.critic.num_ratings,
+				reviewCount: null,
+				url: this.urlCritic,
+				isMobile,
+				storage: this.storage
+			}));
+			criticSpan.append(DynamicStars({ type: 'allocine-ratings', rating: this.critic.rating }));
 			section.append(criticSpan);
 		}
 
 		if (this.storage.get('allocine-users-enabled') === true) {
 			const userSpan = this._createRatingsStyleSpan('allocine-user-score', 'Users');
-			userSpan.append(this.helpers.createAllocineCriticScore('ratings-style', this.user.rating, this.user.num_ratings, this.user.num_reviews, this.urlUser, isMobile));
-			userSpan.append(this.helpers.createDynamicStars('allocine-ratings', this.user.rating));
+			userSpan.append(AllocineCriticScore({
+				type: 'ratings-style',
+				rating: this.user.rating,
+				count: this.user.num_ratings,
+				reviewCount: this.user.num_reviews,
+				url: this.urlUser,
+				isMobile,
+				storage: this.storage
+			}));
+			userSpan.append(DynamicStars({ type: 'allocine-ratings', rating: this.user.rating }));
 			section.append(userSpan);
 		}
 
@@ -269,12 +294,12 @@ export class AllocineHelper extends Helper {
 
 	_createRatingsStyleSpan(className: string, labelText: string): HTMLElement {
 
-		const span = this.helpers.createElement('span', {
+		const span = createElement('span', {
 			class: `${className} allocine-ratings-style`,
 			style: 'position: relative; height: 60px;'
 		});
 
-		const label = this.helpers.createElement('span', {
+		const label = createElement('span', {
 			class: 'allocine-label'
 		});
 		label.innerText = labelText;
@@ -289,33 +314,52 @@ export class AllocineHelper extends Helper {
 
 		const { isMobile } = this.pageState;
 
-		const buttonDiv: HTMLElement = this.helpers.createElement('div', {
+		const buttonDiv: HTMLElement = createElement('div', {
 			class: 'toggle-button-holder allocine-buttons'
 		});
 		section.append(buttonDiv);
 
-		buttonDiv.append(this.helpers.createToggleButton('allocine-button allo-user', 'USER', 'allocine-user-score', true, false, isMobile));
-		buttonDiv.append(this.helpers.createToggleButton('allocine-button allo-critic', 'CRITIC', 'allocine-critic-score', false, (this.critic.rating === 0), isMobile));
+		buttonDiv.append(ToggleButton({
+			type: 'allocine-button allo-user',
+			text: 'USER',
+			target: 'allocine-user-score',
+			selected: true,
+			disabled: false,
+			isMobile,
+			onToggle: this.helpers.changeTomatoScore,
+			onToggleMobile: this.helpers.changeTomatoScoreMobile
+		}));
+		buttonDiv.append(ToggleButton({
+			type: 'allocine-button allo-critic',
+			text: 'CRITIC',
+			target: 'allocine-critic-score',
+			selected: false,
+			disabled: (this.critic.rating === 0),
+			isMobile,
+			onToggle: this.helpers.changeTomatoScore,
+			onToggleMobile: this.helpers.changeTomatoScoreMobile
+		}));
 		if (this.storage.get('allocine-users-enabled') !== true || this.storage.get('allocine-critic-enabled') !== true) {
 			buttonDiv.style.display = 'none';
 		}
 
 		// User score
-		const userSpan: HTMLElement = this.helpers.createElement('span', {
+		const userSpan: HTMLElement = createElement('span', {
 			class: 'allocine-user-score toggle-score-display',
 			style: 'position: relative; display: block; margin-top: 5px;'
 		});
 
-		userSpan.append(this.helpers.createHistogram(
-			this.storage,
-			'allocine',
-			this.urlUser,
-			this.user.rating,
-			this.user.num_reviews,
-			this.user.votes,
-			this.user.percents,
-			this.user.highest
-		));
+		userSpan.append(Histogram({
+			storage: this.storage,
+			type: 'allocine',
+			url: this.urlUser,
+			rating: this.user.rating,
+			count: this.user.num_reviews,
+			votes: this.user.votes,
+			percents: this.user.percents,
+			highest: this.user.highest,
+			ratingsSuffix: this.helpers.getRatingsSuffix()
+		}));
 
 		section.append(userSpan);
 
@@ -324,12 +368,20 @@ export class AllocineHelper extends Helper {
 		}
 
 		// Critic score
-		const criticSpan: HTMLElement = this.helpers.createElement('span', {
+		const criticSpan: HTMLElement = createElement('span', {
 			class: 'allocine-critic-score toggle-score-display',
 			style: 'position: relative; display: block; height: 44px; display:none; margin-top: 5px;'
 		});
-		criticSpan.append(this.helpers.createAllocineCriticScore('allocine', this.critic.rating, this.critic.num_ratings, null, this.urlCritic, isMobile));
-		criticSpan.append(this.helpers.createDynamicStars('allocine-critic', this.critic.rating));
+		criticSpan.append(AllocineCriticScore({
+			type: 'allocine',
+			rating: this.critic.rating,
+			count: this.critic.num_ratings,
+			reviewCount: null,
+			url: this.urlCritic,
+			isMobile,
+			storage: this.storage
+		}));
+		criticSpan.append(DynamicStars({ type: 'allocine-critic', rating: this.critic.rating }));
 		section.append(criticSpan);
 
 		// Add the tooltips as text for mobile

@@ -2,6 +2,9 @@
 import { LOAD_STATES } from '../constants';
 import { PageState, StorageObject } from '../types/types';
 import { Helper } from './Helper';
+import { ChartSection } from '../components/ChartSection';
+import { Histogram } from '../components/Histogram';
+import { createElement } from '../components/dom';
 
 const API_URL = 'https://api.graphql.imdb.com/';
 
@@ -124,29 +127,33 @@ export class IMDBHelper extends Helper {
 			return;
 		}
 
-		const logoSvg: HTMLElement = this.helpers.createElement('span', {
+		const logoSvg: HTMLElement = createElement('span', {
 			style: `height: 16px; width: 32px; position: absolute; background-image: url("${browser.runtime.getURL('images/imdb-logo.svg')}");`
 		});
 
-		const section: HTMLElement = this._createChartSection(
-			{
+		const section: HTMLElement = ChartSection({
+			selectorPrefix: this.selectorPrefix,
+			logoProps: {
 				href: this.linkURL,
 				style: 'position: absolute;',
 				svg: logoSvg
 			},
-			'margin-bottom: 15px !important;'
-		);
+			headerStyle: 'margin-bottom: 15px !important;',
+			isMobile: this.pageState.isMobile,
+			storage: this.storage
+		});
 
-		section.append(this.helpers.createHistogram(
-			this.storage,
-			'imdb',
-			this.linkURL,
-			this.rating,
-			this.num_ratings,
-			this.votes,
-			this.percents,
-			this.highest
-		));
+		section.append(Histogram({
+			storage: this.storage,
+			type: 'imdb',
+			url: this.linkURL,
+			rating: this.rating,
+			count: this.num_ratings,
+			votes: this.votes,
+			percents: this.percents,
+			highest: this.highest,
+			ratingsSuffix: this.helpers.getRatingsSuffix()
+		}));
 
 		// Add the tooltip as text for mobile
 		const score = section.querySelector('.averagerating.tooltip');

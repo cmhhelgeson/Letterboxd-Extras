@@ -1,4 +1,5 @@
 import { CAST_AVATAR_PLACEHOLDER_SVG, CAST_WATCHED_EYE_SVG, CAST_VIEW_EXTRAS_SVG, CAST_VIEW_COMPACT_SVG } from '../SVG.js';
+import { createElement } from '../components/dom';
 
 const BATCH_SIZE = 20;
 
@@ -52,11 +53,11 @@ export class CastHelper {
 		this.castList = castList;
 		this.username = loggedIn ? this.getUsername() : null;
 
-		const section = this.helpers.createElement('div', { class: 'extras-cast-section' });
+		const section = createElement('div', { class: 'extras-cast-section' });
 		section.append(this.createToolbar());
 
 		// Same card list as the film page's related news, filled when the extras view is first shown
-		this.list = this.helpers.createElement('div', { class: 'extras-cast-list card-summary-list -vertical-list-vp-min-tablet' });
+		this.list = createElement('div', { class: 'extras-cast-list card-summary-list -vertical-list-vp-min-tablet' });
 		section.append(this.list);
 
 		castList.before(section);
@@ -67,26 +68,26 @@ export class CastHelper {
 
 	createToolbar() {
 		// Letterboxd's list page bar: count on the left, view toggle on the right
-		const toolbar = this.helpers.createElement('div', { class: 'internal-content-nav has-toggle extras-cast-toolbar' });
+		const toolbar = createElement('div', { class: 'internal-content-nav has-toggle extras-cast-toolbar' });
 
-		const toggle = this.helpers.createElement('ul', { class: 'view-toggle' });
+		const toggle = createElement('ul', { class: 'view-toggle' });
 		this.compactButton = this.createViewButton('Compact', CAST_VIEW_COMPACT_SVG, false);
 		this.extrasButton = this.createViewButton('Extras', CAST_VIEW_EXTRAS_SVG, true);
 		toggle.append(this.compactButton.parentElement, this.extrasButton.parentElement);
 		toolbar.append(toggle);
 
-		const count = this.helpers.createElement('p', { class: 'list-date' });
+		const count = createElement('p', { class: 'list-date' });
 		count.innerText = `${this.actors.length} actor${this.actors.length === 1 ? '' : 's'}`;
 		toolbar.append(count);
 
-		toolbar.append(this.helpers.createElement('div', { class: 'clear' }));
+		toolbar.append(createElement('div', { class: 'clear' }));
 
 		return toolbar;
 	}
 
 	createViewButton(label, icon, extras) {
-		const item = this.helpers.createElement('li', {});
-		const button = this.helpers.createElement('button', { class: 'replace', type: 'button', title: `${label} view` });
+		const item = createElement('li', {});
+		const button = createElement('button', { class: 'replace', type: 'button', title: `${label} view` });
 		button.innerHTML = icon;
 		button.addEventListener('click', () => {
 			this.setView(extras);
@@ -125,12 +126,12 @@ export class CastHelper {
 
 	createLoadMoreButton(remaining) {
 		// Same button Letterboxd uses to expand its related news list
-		const button = this.helpers.createElement('button', {
+		const button = createElement('button', {
 			class: 'showalltrigger',
 			type: 'button',
 			title: `Showing ${this.visibleCount} of ${this.actors.length} cast members`
 		});
-		const label = this.helpers.createElement('span', { class: 'label' });
+		const label = createElement('span', { class: 'label' });
 		label.innerText = `Load ${Math.min(BATCH_SIZE, remaining)} More`;
 		button.append(label);
 		button.addEventListener('click', () => this.loadMore());
@@ -139,18 +140,18 @@ export class CastHelper {
 	}
 
 	createCard(actor) {
-		const card = this.helpers.createElement('article', { class: 'card-summary extras-cast-card' });
-		const inner = this.helpers.createElement('div', { class: 'inner' });
+		const card = createElement('article', { class: 'card-summary extras-cast-card' });
+		const inner = createElement('div', { class: 'inner' });
 		card.append(inner);
 
 		if (this.storage.get('cast-extras-photos') === true) {
 			inner.append(this.createAvatar(actor));
 		}
 
-		const detail = this.helpers.createElement('div', { class: 'extras-cast-detail body-text -prose' });
-		const name = this.helpers.createElement('a', { class: 'extras-cast-name', href: actor.href });
+		const detail = createElement('div', { class: 'extras-cast-detail body-text -prose' });
+		const name = createElement('a', { class: 'extras-cast-name', href: actor.href });
 		name.innerText = actor.name;
-		const character = this.helpers.createElement('span', { class: 'extras-cast-character' });
+		const character = createElement('span', { class: 'extras-cast-character' });
 		this.setCharacter(character, actor);
 		detail.append(name, character);
 		inner.append(detail);
@@ -163,8 +164,8 @@ export class CastHelper {
 	}
 
 	createAvatar(actor) {
-		const media = this.helpers.createElement('figure', { class: 'media -image' });
-		const link = this.helpers.createElement('a', { class: 'canvas', href: actor.href, title: actor.name });
+		const media = createElement('figure', { class: 'media -image' });
+		const link = createElement('a', { class: 'canvas', href: actor.href, title: actor.name });
 		link.innerHTML = CAST_AVATAR_PLACEHOLDER_SVG;
 		media.append(link);
 
@@ -185,7 +186,7 @@ export class CastHelper {
 		}
 		if (photoUrl === '') return;
 
-		const img = this.helpers.createElement('img', { src: photoUrl, alt: actor.name, loading: 'lazy' });
+		const img = createElement('img', { src: photoUrl, alt: actor.name, loading: 'lazy' });
 		img.addEventListener('error', () => {
 			link.innerHTML = CAST_AVATAR_PLACEHOLDER_SVG;
 		});
@@ -232,13 +233,13 @@ export class CastHelper {
 	}
 
 	createWatchedLink(actor) {
-		const link = this.helpers.createElement('a', {
+		const link = createElement('a', {
 			class: 'extras-cast-watched',
 			href: `/${this.username}/films/with/actor/${actor.slug}/`,
 			title: `Films starring ${actor.name} you have watched`
 		});
 		link.innerHTML = CAST_WATCHED_EYE_SVG;
-		const count = this.helpers.createElement('span', {});
+		const count = createElement('span', {});
 		count.innerText = '...';
 		link.append(count);
 

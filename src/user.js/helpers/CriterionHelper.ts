@@ -2,6 +2,7 @@
 import { LOAD_STATES } from '../constants';
 import { PageState, StorageObject } from '../types/types';
 import { Helper } from './Helper';
+import { createElement } from '../components/dom';
 
 export class CriterionHelper extends Helper {
 
@@ -24,7 +25,7 @@ export class CriterionHelper extends Helper {
 		if (this.storage.get('criterion-link-enabled') === true){
 			this.addButtonLink(this.linkURL, 'CRITERION');
 		}
-		const logoSvg = this.helpers.createElement('span', {}, {
+		const logoSvg = createElement('span', {}, {
 			height: '24px',
 			width: '24px',
 			'background-image': 'url("' + browser.runtime.getURL("images/criterion-logo.svg") + '")',

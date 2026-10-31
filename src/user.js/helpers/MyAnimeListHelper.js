@@ -1,6 +1,8 @@
 
 import { LOAD_STATES } from '../constants';
 import { Helper } from './Helper';
+import { ChartSection } from '../components/ChartSection';
+import { Histogram } from '../components/Histogram';
 
 export class MyAnimeListHelper extends Helper {
 
@@ -75,13 +77,16 @@ export class MyAnimeListHelper extends Helper {
 
 		// Create and Add
 		// Add the section to the page
-		const scoreSection = this._createChartSection(
-			{
+		const scoreSection = ChartSection({
+			selectorPrefix: this.selectorPrefix,
+			logoProps: {
 				href: `${this.data.url}/stats`,
 				style: `position: absolute; background-image: url("${browser.runtime.getURL('images/mal-logo.png')}");`
 			},
-			"margin-bottom: 15px !important;"
-		);
+			headerStyle: "margin-bottom: 15px !important;",
+			isMobile: this.pageState.isMobile,
+			storage: this.storage
+		});
 
 		// Loop first and determine highest votes
 		for (let ii = 0; ii < 10; ii++) {
@@ -90,16 +95,17 @@ export class MyAnimeListHelper extends Helper {
 			}
 		}
 
-		scoreSection.append(this.helpers.createHistogram(
-			this.storage,
-			'mal',
-			this.url + '/stats',
-			this.rating,
-			this.num_ratings,
-			this.statistics.scores,
-			this.statistics.scores,
-			this.highest
-		));
+		scoreSection.append(Histogram({
+			storage: this.storage,
+			type: 'mal',
+			url: this.url + '/stats',
+			rating: this.rating,
+			count: this.num_ratings,
+			votes: this.statistics.scores,
+			percents: this.statistics.scores,
+			highest: this.highest,
+			ratingsSuffix: this.helpers.getRatingsSuffix()
+		}));
 
 		// Add the tooltip as text for mobile
 		const score = scoreSection.querySelector('.averagerating.tooltip');

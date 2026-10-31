@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { PageState, StorageObject } from '../types/types';
 import { Helper } from './Helper';
+import { ShowDetailsButton } from '../components/ShowDetailsButton';
+import { createElement } from '../components/dom';
 
 /** One Metacritic score (the Metascore or the user score) with its review breakdown. */
 interface MetaScore {
@@ -159,17 +161,17 @@ export class MetacriticHelper extends Helper {
 		const { isMobile } = this.pageState;
 
 		// Add the section to the page
-		const section: HTMLElement = this.helpers.createElement('section', {
+		const section: HTMLElement = createElement('section', {
 			class: 'extras-section ratings-histogram-chart meta-ratings ratings-extras'
 		});
 
 		// Add the Header
-		const heading: HTMLElement = this.helpers.createElement('h2', {
+		const heading: HTMLElement = createElement('h2', {
 			class: 'section-heading section-heading-extras'
 		});
 		section.append(heading);
 
-		const logoHolder: HTMLElement = this.helpers.createElement('a', {
+		const logoHolder: HTMLElement = createElement('a', {
 			class: this.data != null ? 'logo-meta-link' : 'logo-meta',
 			style: 'width: 100%;'
 		});
@@ -178,12 +180,12 @@ export class MetacriticHelper extends Helper {
 		}
 		heading.append(logoHolder);
 
-		logoHolder.append(this.helpers.createElement('span', {
+		logoHolder.append(createElement('span', {
 			class: 'icon-meta',
 			style: 'height: 20px; width: 20px; background-image: url("https://www.metacritic.com/images/icons/metacritic-icon.svg");'
 		}));
 
-		logoHolder.append(this.helpers.createElement('span', {
+		logoHolder.append(createElement('span', {
 			class: 'text-meta',
 			style: 'height: 20px; width: 100px; background-image: url("https://www.metacritic.com/images/icons/metacritic-wordmark.svg");'
 		}));
@@ -191,7 +193,11 @@ export class MetacriticHelper extends Helper {
 		// Add the Show Details button
 		let showDetails: HTMLElement | null = null;
 		if (this.data != null) {
-			showDetails = this.helpers.createShowDetailsButton('meta', 'meta-score-details') as HTMLElement;
+			showDetails = ShowDetailsButton({
+				name: 'meta',
+				target: 'meta-score-details',
+				storage: this.storage
+			}) as HTMLElement;
 			section.append(showDetails);
 		}
 
@@ -215,7 +221,7 @@ export class MetacriticHelper extends Helper {
 
 		// Add Must see if applicable
 		if (this.storage.get('metacritic-mustsee-enabled') === true && this.mustSee == true) {
-			section.append(this.helpers.createElement('span', {
+			section.append(createElement('span', {
 				class: isTV
 					? 'meta-must-see meta-must-watch tooltip tooltip-extra display-rating -highlight'
 					: 'meta-must-see tooltip tooltip-extra display-rating -highlight',
@@ -294,7 +300,7 @@ export class MetacriticHelper extends Helper {
 		if (type == 'critic' || mustSee) {
 			spanStyle += 'margin-right: 10px;';
 		}
-		const span: HTMLElement = this.helpers.createElement('span', {
+		const span: HTMLElement = createElement('span', {
 			class: 'meta-span-' + type,
 			style: spanStyle
 		});
@@ -316,7 +322,7 @@ export class MetacriticHelper extends Helper {
 		}
 
 		// The element that is the score itself
-		const text: HTMLElement = this.helpers.createElement('a', {
+		const text: HTMLElement = createElement('a', {
 			class: 'tooltip display-rating -highlight ' + className,
 			style: scoreStyle
 		});
@@ -380,7 +386,7 @@ export class MetacriticHelper extends Helper {
 		span.append(text);
 
 		// Add the positive/mixed/negative bars
-		const chartSpan: HTMLElement = this.helpers.createElement('span', {
+		const chartSpan: HTMLElement = createElement('span', {
 			class: 'meta-score-details score-' + type + ' ' + mobileClass,
 			style: 'display: none'
 		});
@@ -397,7 +403,7 @@ export class MetacriticHelper extends Helper {
 
 		// Add the tooltip as text for mobile
 		if (addTooltip && tooltip != '') {
-			const detailsSpan: HTMLElement = this.helpers.createElement('span', {
+			const detailsSpan: HTMLElement = createElement('span', {
 				class: 'meta-details-' + type + ' mobile-details-text'
 			});
 
@@ -406,7 +412,7 @@ export class MetacriticHelper extends Helper {
 				detailsSpan.style.display = 'none';
 			}
 
-			const detailsText: HTMLElement = this.helpers.createElement('p', {
+			const detailsText: HTMLElement = createElement('p', {
 			});
 			detailsText.innerText = tooltip;
 			detailsSpan.append(detailsText);
@@ -419,27 +425,27 @@ export class MetacriticHelper extends Helper {
 
 	_createMetaBarCount(type: string, count: number, total: number, color: string): HTMLElement {
 		// Span that holds it all
-		const span: HTMLElement = this.helpers.createElement('span', {
+		const span: HTMLElement = createElement('span', {
 			style: 'display: block; width: 150px;'
 		});
 		// Text label
-		const label: HTMLElement = this.helpers.createElement('span', {
+		const label: HTMLElement = createElement('span', {
 			class: 'meta-bar-label'
 		});
 		label.innerText = type;
 		span.append(label);
 
 		// Span that holds the bar
-		const barSpan: HTMLElement = this.helpers.createElement('span', {
+		const barSpan: HTMLElement = createElement('span', {
 			style: 'display: inline-block;'
 		});
 		// Bar outline
-		const backBar: HTMLElement = this.helpers.createElement('span', {
+		const backBar: HTMLElement = createElement('span', {
 			class: 'meta-bar outline'
 		});
 		// Bar that displays the percentage
 		const width = Math.round((count / total) * 100);
-		const frontBar: HTMLElement = this.helpers.createElement('span', {
+		const frontBar: HTMLElement = createElement('span', {
 			class: 'meta-bar fill',
 			style: 'width: ' + width.toString() + '%; background-color:' + color + ';'
 		});
@@ -448,7 +454,7 @@ export class MetacriticHelper extends Helper {
 		span.append(barSpan);
 
 		// Text that shows the num of ratings
-		const countText: HTMLElement = this.helpers.createElement('span', {
+		const countText: HTMLElement = createElement('span', {
 			class: 'meta-bar-value'
 		});
 		countText.innerText = count.toLocaleString();

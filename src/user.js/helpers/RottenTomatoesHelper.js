@@ -1,5 +1,8 @@
 import { LOAD_STATES } from '../constants';
 import { Helper } from './Helper';
+import { ChartSectionElement, ChartSectionHeader, ChartSectionLogoHolder, SectionShowDetailsButton } from '../components/ChartSection';
+import { ToggleButton } from '../components/ToggleButton';
+import { createElement } from '../components/dom';
 
 /**
  * One score on the scorecard: the Tomatometer (critics) or the Popcornmeter (audience), for all
@@ -155,17 +158,24 @@ export class RottenTomatoesHelper extends Helper {
 			return;
 		}
 
-		// Assembled from the parts rather than with _createChartSection, which only adds the
+		// Assembled from the parts rather than with the ChartSection component, which only adds the
 		// SHOW DETAILS button on mobile: Rotten Tomatoes shows it everywhere.
-		const section = this._createChartSectionElement(false);
-		const heading = this._createChartSectionHeader();
+		const section = ChartSectionElement({ selectorPrefix: this.selectorPrefix, isChart: false });
+		const heading = ChartSectionHeader();
 		section.append(heading);
-		heading.append(this._createChartSectionLogoHolder({
-			href: this.linkURL,
-			style: 'height: 20px; width: 75px; background-image: url("https://www.rottentomatoes.com/assets/pizza-pie/images/rtlogo.9b892cff3fd.png");'
+		heading.append(ChartSectionLogoHolder({
+			selectorPrefix: this.selectorPrefix,
+			logoProps: {
+				href: this.linkURL,
+				style: 'height: 20px; width: 75px; background-image: url("https://www.rottentomatoes.com/assets/pizza-pie/images/rtlogo.9b892cff3fd.png");'
+			}
 		}));
 
-		const showDetails = this._createShowDetailsButton();
+		const showDetails = SectionShowDetailsButton({
+			selectorPrefix: this.selectorPrefix,
+			storage: this.storage,
+			isMobile: this.pageState.isMobile
+		});
 		section.append(showDetails);
 
 		const criticAdded = this.storage.get('tomato-critic-enabled') === true;
@@ -257,21 +267,48 @@ export class RottenTomatoesHelper extends Helper {
 		// Consequently, only 'Top' and 'Verified' get disabled
 		const noSubsetScore = subsetScore.percent === '--';
 
-		const span = this.helpers.createElement('span', {
+		const span = createElement('span', {
 			style: 'display: inline-block; padding-right: 10px;'
 		});
 
-		const buttonHolder = this.helpers.createElement('div', {
+		const buttonHolder = createElement('div', {
 			class: 'toggle-button-holder'
 		});
 		span.append(buttonHolder);
 
 		if (isMobile) {
 			// One button that flips between the two scores
-			buttonHolder.append(this.helpers.createToggleButton(`${group}-toggle`, 'ALL', `score-${group}-all,score-${group}-${subset}`, true, noSubsetScore, isMobile));
+			buttonHolder.append(ToggleButton({
+				type: `${group}-toggle`,
+				text: 'ALL',
+				target: `score-${group}-all,score-${group}-${subset}`,
+				selected: true,
+				disabled: noSubsetScore,
+				isMobile,
+				onToggle: this.helpers.changeTomatoScore,
+				onToggleMobile: this.helpers.changeTomatoScoreMobile
+			}));
 		} else {
-			buttonHolder.append(this.helpers.createToggleButton(`${group}-all`, 'ALL', `score-${group}-all`, true, false, false));
-			buttonHolder.append(this.helpers.createToggleButton(`${group}-${subset}`, subsetLabel, `score-${group}-${subset}`, false, noSubsetScore, false));
+			buttonHolder.append(ToggleButton({
+				type: `${group}-all`,
+				text: 'ALL',
+				target: `score-${group}-all`,
+				selected: true,
+				disabled: false,
+				isMobile: false,
+				onToggle: this.helpers.changeTomatoScore,
+				onToggleMobile: this.helpers.changeTomatoScoreMobile
+			}));
+			buttonHolder.append(ToggleButton({
+				type: `${group}-${subset}`,
+				text: subsetLabel,
+				target: `score-${group}-${subset}`,
+				selected: false,
+				disabled: noSubsetScore,
+				isMobile: false,
+				onToggle: this.helpers.changeTomatoScore,
+				onToggleMobile: this.helpers.changeTomatoScoreMobile
+			}));
 		}
 
 		span.append(this._createTomatoScore(`${group}-all`, allName, all, 'block', addTooltip));
@@ -299,7 +336,7 @@ export class RottenTomatoesHelper extends Helper {
 		const isCritic = type.startsWith('critic');
 		const baseType = type.split('-')[0];
 
-		const scoreDiv = this.helpers.createElement('div', {
+		const scoreDiv = createElement('div', {
 			class: `toggle-score-display score-${type}`,
 			style: `display: ${visibility};`
 		});
@@ -309,7 +346,7 @@ export class RottenTomatoesHelper extends Helper {
 		}
 
 		const icon = tomatoIcons[data.state] ?? (isCritic ? 'tomato-critic-no-score' : 'tomato-audience-no-score');
-		scoreDiv.append(this.helpers.createElement('span', {
+		scoreDiv.append(createElement('span', {
 			class: 'icon-popcorn',
 			style: `background-image: url("${browser.runtime.getURL(`images/${icon}.svg`)}");`
 		}));
@@ -336,7 +373,7 @@ export class RottenTomatoesHelper extends Helper {
 			: `Average of ${rating}${suffix} based on ${data.num_ratings.toLocaleString()} ${display} rating${plural}`;
 
 		// The score itself, linking to the matching reviews
-		const score = this.helpers.createElement('a', {
+		const score = createElement('a', {
 			class: 'tooltip tooltip-extra display-rating -highlight tomato-score',
 			href: `${this.linkURL}/reviews${tomatoReviewQueries[type]}`,
 			style: 'display: inline-block; width: 50px',
@@ -347,7 +384,7 @@ export class RottenTomatoesHelper extends Helper {
 
 		// The fresh/rotten bars, hidden until SHOW DETAILS
 		if (data.likedCount + data.notLikedCount > 0) {
-			const chartSpan = this.helpers.createElement('span', {
+			const chartSpan = createElement('span', {
 				class: 'rt-score-details',
 				style: 'display: none; width: 140px; margin-left: 5px;'
 			});
@@ -362,7 +399,7 @@ export class RottenTomatoesHelper extends Helper {
 
 		// Add the tooltip as text for mobile
 		if (addTooltip) {
-			const detailsSpan = this.helpers.createElement('span', {
+			const detailsSpan = createElement('span', {
 				class: `toggle-score-display score-${baseType} score-${type} mobile-details-text`
 			});
 
@@ -374,7 +411,7 @@ export class RottenTomatoesHelper extends Helper {
 				detailsSpan.style.display = 'none';
 			}
 
-			const detailsText = this.helpers.createElement('p');
+			const detailsText = createElement('p');
 			detailsText.innerText = hover;
 			detailsSpan.append(detailsText);
 
@@ -398,23 +435,23 @@ export class RottenTomatoesHelper extends Helper {
 
 		const mobileClass = this.pageState.isMobile ? ' extras-mobile' : '';
 
-		const span = this.helpers.createElement('span', {
+		const span = createElement('span', {
 			style: 'display: block; width: 140px;'
 		});
 
-		const labelSpan = this.helpers.createElement('span', {
+		const labelSpan = createElement('span', {
 			class: `rt-bar text-label${mobileClass}`
 		});
 		labelSpan.innerText = label;
 		span.append(labelSpan);
 
-		const barSpan = this.helpers.createElement('span', {
+		const barSpan = createElement('span', {
 			style: 'display: inline-block;'
 		});
-		const backBar = this.helpers.createElement('span', {
+		const backBar = createElement('span', {
 			class: 'rt-bar outline'
 		});
-		const frontBar = this.helpers.createElement('span', {
+		const frontBar = createElement('span', {
 			class: 'rt-bar fill',
 			style: `width: ${Math.round((count / total) * 100)}%;`
 		});
@@ -422,7 +459,7 @@ export class RottenTomatoesHelper extends Helper {
 		barSpan.append(backBar);
 		span.append(barSpan);
 
-		const countText = this.helpers.createElement('span', {
+		const countText = createElement('span', {
 			class: `rt-bar text-count${mobileClass}`
 		});
 		countText.innerText = count.toLocaleString();

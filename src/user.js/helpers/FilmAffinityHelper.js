@@ -1,5 +1,7 @@
 import { LOAD_STATES } from '../constants';
 import { Helper } from './Helper';
+import { ShowDetailsButton } from '../components/ShowDetailsButton';
+import { createElement } from '../components/dom';
 
 export class FilmAffinityHelper extends Helper {
 
@@ -77,17 +79,17 @@ export class FilmAffinityHelper extends Helper {
 		// Add to Letterboxd
 		//* **************************************************************
 		// Add the section to the page
-		const section = this.helpers.createElement('section', {
+		const section = createElement('section', {
 			class: 'section ratings-histogram-chart filmaff-ratings ratings-extras'
 		});
 
 		// Add the Header
-		const heading = this.helpers.createElement('h2', {
+		const heading = createElement('h2', {
 			class: 'section-heading section-heading-extras'
 		});
 		section.append(heading);
 
-		const logo = this.helpers.createElement('a', {
+		const logo = createElement('a', {
 			class: 'logo-filmaff',
 			style: `height: 20px; width: 75px; background-image: url("${browser.runtime.getURL('/images/filmaff-logo.png')}");`
 		});
@@ -97,13 +99,17 @@ export class FilmAffinityHelper extends Helper {
 		let showDetails = null;
 		if (isMobile) {
 			// Add the Show Details button
-			showDetails = this.helpers.createShowDetailsButton('filmaff', 'filmaff-score-details');
+			showDetails = ShowDetailsButton({
+				name: 'filmaff',
+				target: 'filmaff-score-details',
+				storage: this.storage
+			});
 			section.append(showDetails);
 		}
 
 		// Score
 		//* **************************************************************
-		const container = this.helpers.createElement('span', {}, {
+		const container = createElement('span', {}, {
 			'display': 'block',
 			'margin-bottom': '10px'
 		});

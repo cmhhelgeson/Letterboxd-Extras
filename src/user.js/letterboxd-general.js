@@ -1,4 +1,5 @@
 import { LOAD_STATES } from "./constants";
+import { createElement } from './components/dom';
 
 export class LetterboxdGeneral {
 
@@ -48,10 +49,10 @@ export class LetterboxdGeneral {
 		}
 
 		// Create elements
-		const li = this.extensionHelpers.createElement('li', {
+		const li = createElement('li', {
 			class: 'popmenu-textitem -centered'
 		});
-		const a = this.extensionHelpers.createElement('a', {
+		const a = createElement('a', {
 			href: filmUrl,
 			["data-tabindex"]: '',
 			tabindex: '-1'

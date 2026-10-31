@@ -25,6 +25,14 @@ import { CastHelper } from './helpers/CastHelper';
 import { IMDBHelper } from './helpers/IMDBHelper';
 
 import styles from './styles/letterboxd-extras.css';
+import { ButtonLink } from './components/ButtonLink';
+import { DetailsRowDetail, DetailsRowHeader, SharedFilmLink } from './components/DetailsRow';
+import { DetailsText } from './components/DetailsText';
+import { ErrorMessageButton, ErrorMessageItem, ErrorMessageList, ErrorMessagePanel } from './components/ErrorMessage';
+import { RatingsHolder, ShowRatingsButton } from './components/RatingsHolder';
+import { SectionAccessories, SectionAccessory, SectionAccessoryAside } from './components/SectionAccessory';
+import { TableRowValue } from './components/TableRow';
+import { createElement } from './components/dom';
 
 GM_addStyle(styles);
 
@@ -532,11 +540,11 @@ const letterboxd = {
 						tooltip = score.getAttribute('title');
 					}
 
-					const detailsSpan = letterboxd.helpers.createElement('span', {
+					const detailsSpan = createElement('span', {
 						class: 'lb-score-details mobile-details-text'
 					});
 
-					const detailsText = letterboxd.helpers.createElement('p', {
+					const detailsText = createElement('p', {
 					});
 					detailsText.innerText = tooltip;
 					detailsSpan.append(detailsText);
@@ -849,7 +857,7 @@ const letterboxd = {
 							}
 
 							// Create a hidden element to force the mutation observer to trigger
-							const mutation = letterboxd.helpers.createElement('a', {
+							const mutation = createElement('a', {
 								class: 'extras-mutation-forcer',
 								style: 'display: none;'
 							});
@@ -1178,15 +1186,7 @@ const letterboxd = {
 			}
 
 			// Create Button Element
-			const button = letterboxd.helpers.createElement('a', {
-				class: `micro-button track-event extras-button ${className}`,
-				href: url
-			});
-			button.innerText = text;
-
-			if (letterboxd.storage.get('open-same-tab') != true) {
-				button.setAttribute("target", "_blank");
-			}
+			const button = ButtonLink({ className, url, text, openInNewTab: letterboxd.storage.get('open-same-tab') != true });
 
 			// Determine Placement
 			const order = [
@@ -1242,11 +1242,11 @@ const letterboxd = {
 
 			if (buttons != null && buttons.length > 0) {
 				// Create a new div to hold the buttons
-				const newHolder = letterboxd.helpers.createElement('div', {}, {
+				const newHolder = createElement('div', {}, {
 					['margin-top']: '5px'
 				});
 					// Create the 'More at' text
-				const text = letterboxd.helpers.createElement('span', {
+				const text = createElement('span', {
 					class: 'text-footer-extra'
 				});
 				if (this.pageState.isMobile == false) {
@@ -1294,7 +1294,7 @@ const letterboxd = {
 					var format = hours + "h " + minutes + "m";
 
 					// Create the new duration text
-					const durationSpan = letterboxd.helpers.createElement('span', {
+					const durationSpan = createElement('span', {
 						class: 'text-footer-extra duration-extra tooltip-extra'
 					});
 					durationSpan.innerText = duration[0];
@@ -1371,7 +1371,7 @@ const letterboxd = {
 				if (this.pageState.isMobile) {
 					const intro = document.querySelector('.details .credits .introduction');
 
-					const rating = letterboxd.helpers.createElement('span', {
+					const rating = createElement('span', {
 						class: 'introduction extras-rating extras-rating-mobile'
 					});
 					rating.innerText = this.contentRating;
@@ -1380,12 +1380,12 @@ const letterboxd = {
 				} else {
 					const year = document.querySelector('.releasedate');
 
-					const small = letterboxd.helpers.createElement('span', {
+					const small = createElement('span', {
 						class: 'extras-rating'
 					});
 					year.after(small);
 
-					const p = letterboxd.helpers.createElement('span', {
+					const p = createElement('span', {
 					});
 					p.innerText = this.contentRating;
 					small.append(p);
@@ -1439,21 +1439,11 @@ const letterboxd = {
 			
 			var currentSidebar = document.querySelector('.sidebar');
 			
-			var sidebar = letterboxd.helpers.createElement('div', {
-				class: 'extras-ratings-holder',
-				style: 'display: none'
-			});
+			var sidebar = RatingsHolder();
 			currentSidebar.append(sidebar)
 
-			const moreButton = letterboxd.helpers.createElement('a', {
-				class: 'text-slug extras-show-more'
-			});
-			moreButton.innerText = "Show ratings";
+			const moreButton = ShowRatingsButton();
 			currentSidebar.append(moreButton)
-
-			moreButton.addEventListener('click', event => {
-				toggleAllRatings(event, letterboxd);
-			});
 
 			return sidebar;
 		},
@@ -1461,7 +1451,7 @@ const letterboxd = {
 		createShowReviewsButton(){
 			var reviewsSection = document.querySelector('.film-recent-reviews ');
 
-			const moreButton = letterboxd.helpers.createElement('a', {
+			const moreButton = createElement('a', {
 				class: 'text-slug extras-reviews-toggle'
 			});
 			moreButton.innerText = "Show reviews";
@@ -1478,7 +1468,7 @@ const letterboxd = {
 			// Add if state is 'lost' (Q122238711)
 			if (this.wikiData.StateOfTransmission.includes("Q122238711")){
 				// Create badge
-				const badge = letterboxd.helpers.createElement('span', {
+				const badge = createElement('span', {
 					class: 'badge',
 					style: 'margin-right: 10px;'
 				});
@@ -1545,62 +1535,18 @@ const letterboxd = {
 
 			// Create the error holder
 			if (errorHolder == null){
-				const div = letterboxd.helpers.createElement('div', {
-					class: 'extras-error-div'
-				});
-
-				// The main 'button'
-				const button = letterboxd.helpers.createElement('div', {
-					class: 'extras-error-button text-slug'
-				});
-				div.append(button);
-
-				const label = letterboxd.helpers.createElement('span', {
-					class: 'extras-error-label'
-				});
-				label.innerText = 'Extras Error - Click to view';
-				button.append(label);
-				
-				const badge = letterboxd.helpers.createElement('div', {
-					class: 'extras-error-badge'
-				});
-				badge.innerText = '!';
-				button.append(badge);
-
-				// The ul element that will contain the error text
-				errorHolder = letterboxd.helpers.createElement('ul', {
-					class: 'extras-error-holder'
-				});
-				div.append(errorHolder);
+				// The main 'button', and the ul element that will contain the error text
+				const button = ErrorMessageButton();
+				errorHolder = ErrorMessageList();
+				const div = ErrorMessagePanel({ button, list: errorHolder });
 
 				document.querySelector('body').append(div);
-
-				button.addEventListener('click', event => {
-					toggleErrorMessage(event);
-				});
-
-				// Create the settings link
-				const li = letterboxd.helpers.createElement('li', {
-					class: 'extras-error-settings-link'
-				});
-				const a = letterboxd.helpers.createElement('a', {});
-				a.href = browser.runtime.getURL('/options.html');
-				a.target = '_blank';
-				a.innerText = 'Go to settings';
-				li.append(a);
-
-				errorHolder.append(li);
 			}
 
 			if (id != '' && errorHolder.querySelector(`.extras-error-${id}`) != null)
 				return;
-			
-			const li = letterboxd.helpers.createElement('li', {
-				class: `extras-error-${id}`
-			});
-			const span = letterboxd.helpers.createElement('span', {});
-			span.innerText = message;
-			li.append(span);
+
+			const li = ErrorMessageItem({ id, message });
 			errorHolder.querySelector('.extras-error-settings-link').before(li);
 
 		},
@@ -1642,31 +1588,14 @@ const letterboxd = {
 
 			// Create the accessory section, if needed
 			if (accessorySection == null){
-				const aside = letterboxd.helpers.createElement('aside', {
-					class: 'aside'
-				});
-
-				accessorySection = letterboxd.helpers.createElement('div', {
-					class: 'section-accessories'
-				});
-				aside.append(accessorySection);
+				accessorySection = SectionAccessories();
+				const aside = SectionAccessoryAside({ accessories: accessorySection });
 
 				section.querySelector('.section-header .section-heading')?.after(aside);
 			}
 
 			// Now create the actual accessory
-			const accessory = letterboxd.helpers.createElement('a', {
-				class: 'accessory'
-			});
-
-			if (text != '')
-				accessory.innerText = text;
-
-			if (href != '')
-				accessory.href = href;
-			
-			if (style)
-				accessory.style = style
+			const accessory = SectionAccessory({ text, href, style });
 
 			// Finally, let's add the newly create accessory to the section
 			accessorySection.prepend(accessory);
@@ -1694,20 +1623,6 @@ const letterboxd = {
 			});
 		},
 
-		createShowDetailsButton(name, target){
-			// Add the Show Details button
-			const showDetails = letterboxd.helpers.createElement('a', {
-				class: 'all-link more-link show-details ' + name + '-show-details',
-				['target']: target
-			});
-			showDetails.innerText = "SHOW DETAILS";
-
-			// Add click event
-			showDetails.addEventListener('click', event => { toggleDetails(event, letterboxd.storage); });
-
-			return showDetails;
-		},
-
 		/* getSensFilmQuery() {
 			var query = `
 					query ($id: Int!) {
@@ -1727,32 +1642,6 @@ const letterboxd = {
 				`;
 			return query;
 		} */
-
-		createElement(tag, attrs, styles) {
-			const element = document.createElement(tag);
-			for (const aKey in attrs) {
-				if (!Object.prototype.hasOwnProperty.call(attrs, aKey)) continue;
-				element.setAttribute(aKey, attrs[aKey]);
-			}
-			for (const sKey in styles) {
-				if (!Object.prototype.hasOwnProperty.call(styles, sKey)) continue;
-				element.style[sKey] = styles[sKey];
-			}
-			return element;
-		},
-
-		createElementNS(tag, namespace, attrs, styles) {
-			const element = document.createElementNS(namespace, tag);
-			for (const aKey in attrs) {
-				if (!Object.prototype.hasOwnProperty.call(attrs, aKey)) continue;
-				element.setAttribute(aKey, attrs[aKey]);
-			}
-			for (const sKey in styles) {
-				if (!Object.prototype.hasOwnProperty.call(styles, sKey)) continue;
-				element.style[sKey] = styles[sKey];
-			}
-			return element;
-		},
 
 		changeTomatoScoreMobile(event) {
 			// Get the parent node
@@ -1823,56 +1712,6 @@ const letterboxd = {
 
 		},
 
-		/**
-	 		* Builds a toggle button that allows you to toggle between two different rating views.
-	 		*
-	 		* @param {Object} options
-	 		* @param {string} type The class name of the button (which will reflect the button type)
-	 		* @param {string} text The text in the toggle button
-	 		* @param {string} target - The target class name of the element the button will modify.
-	 		* @param {boolean} selected - If the button is selected by default.
-	 		* @param {disabled} disabled - If the button is disabled by default.
-	 		* @param {string} isMobile - An isMobile flag.
-	 		* @returns {HTMLSpanElement}
-	 		* @private
-	 	*/
-		createToggleButton(type, text, target, selected, disabled, isMobile) {
-			if (target.includes(',')) {
-				var targets = target.split(',');
-				target = targets[0];
-				var targetOther = targets[1];
-			} else {
-				var targetOther = "";
-			}
-
-			const button = letterboxd.helpers.createElement('span', {
-				class: 'toggle-button ' + type,
-				['target']: target,
-				['targetOther']: targetOther
-			});
-			if (selected) { 
-				button.className += " selected";
-			}
-			if (disabled) {
-				button.className += " disabled";
-			}
-			if (isMobile) {
-				button.className += " extras-mobile";
-			}
-			button.innerText = text;
-				
-			// Add click event
-			if (disabled == false){
-				if (isMobile && !type.includes('allo')){
-					button.addEventListener('click', event => { letterboxd.helpers.changeTomatoScoreMobile(event); });
-				} else if (disabled == false){
-					button.addEventListener('click', event => { letterboxd.helpers.changeTomatoScore(event); });
-				}
-			}
-
-			return button;
-		},
-
 		createDetailsRow(headerText, value, currency, togetherWith) {
 			// Determine className
 			let className = "";
@@ -1906,10 +1745,7 @@ const letterboxd = {
 
 			let sharedEl = null;
 			if (togetherWith != null && togetherWith != "") {
-				sharedEl = letterboxd.helpers.createElement('a', {
-					href: `/film/${togetherWith}`
-				});
-				sharedEl.innerText = "(Shared)";
+				sharedEl = SharedFilmLink({ togetherWith });
 			}
 
 			// Check if already added to the page
@@ -1927,30 +1763,8 @@ const letterboxd = {
 				// Add new details row
 				// Create the Elements
 				//********************************************
-				// Create the row header element				
-				const header = letterboxd.helpers.createElement('h3', {
-					class: `${className} header`
-				});
-
-				// Span
-				const span = letterboxd.helpers.createElement('span', {});
-				span.innerText = headerText;
-				header.append(span);
-
-				// Create the list element
-				const detail = letterboxd.helpers.createElement('div', {
-					class: `text-indentedlist ${className} detail`
-				});
-
-				// Text holder
-				const p = letterboxd.helpers.createElement('p', {});
-				p.innerText = value;
-				detail.append(p);
-
-				// Add the shared togetherwith link
-				if (sharedEl != null) {
-					detail.append(sharedEl);
-				}
+				const header = DetailsRowHeader({ className, headerText });
+				const detail = DetailsRowDetail({ className, value, sharedLink: sharedEl });
 
 				// Append to the Tab Details
 				//********************************************
@@ -1995,411 +1809,21 @@ const letterboxd = {
 			}
 		},
 
-		createHistogram(storage, type, url, rating, count, votes, percents, highest) {
-
-			// Create the initial structure for the graph
-			const histogram = this.createElement('div', {
-				class: 'rating-histogram rating-histogram-extras'
-			});
-			const layoutDiv = this.createElement('div', {
-				class: 'layout'
-			});
-			histogram.append(layoutDiv);
-
-
-			// Create the score
-			//*********************************************/
-			let convertRatings = (storage.get('convert-ratings') === '5');
-			let convert10Point = (storage.get('convert-ratings') === '10');
-			let suffix = '/10';
-			let ratingTooltip = '';
-			let ratingText = '';
-
-			if (rating != "N/A") {
-				// Convert the score if needed
-				if (convertRatings === true) {
-					if (type == "anilist") {
-						rating = (Number(rating) / 20).toFixed(1);
-					} else {
-						rating = (Number(rating) / 2).toFixed(1);
-					}
-					suffix = "/5";
-				} else if (type == "anilist") {
-					suffix = "/100";
-				} else if (type == "allocine") {
-					if (convert10Point) {
-						rating = (Number(rating) * 2).toFixed(1);
-						suffix = "/10";
-					} else {
-						rating = Number(rating).toFixed(1);
-						suffix = "/5";
-					}
-				} else {
-					rating = Number(rating).toFixed(1);
-					suffix = "/10";
-				}
-
-				// Create tooltip text
-				ratingTooltip = 'Weighted average of ' + rating + suffix + ' based on ' + count.toLocaleString() + ' ratings'
-			}
-			
-			if (rating == "N/A") {
-				ratingText = "N/A";
-			} else if (type === "anilist" && convertRatings == false) {
-				ratingText = rating + "%";
-			} else {
-				ratingText = rating;
-			}
-
-			const scoreElement = this.createElement('a', {
-				class: 'average-rating tooltip averagerating tooltip imdb-score tooltip-extra',
-				href: url,
-				['data-original-title']: ratingTooltip
-			});
-			scoreElement.innerText = ratingText;
-
-
-			// Create the histogram bar graph
-			//*********************************************/
-			const table = this.createElement('table', {
-				class: 'chart'
-			});
-			const tbody = this.createElement('tbody', {
-				class: 'plot'
-			});
-			table.append(tbody);
-
-			for (var ii = 0; ii < votes.length; ii++) {
-
-				// Determine vote counts and percentages
-				if (type === "mal") {
-					var voteCount = votes[ii].votes;
-					var percentage = votes[ii].percentage;
-				} else if (type === "anilist") {
-					var voteCount = votes[ii].amount;
-					var percentage = (voteCount / count * 100).toFixed(1);
-				} else {
-					var voteCount = votes[ii];
-					var percentage = percents[ii];
-				}
-				
-				// Determine Suffixes
-				let currentRatingsSuffix = letterboxd.overview.ratingsSuffix.map((x) => x);
-				if (type === "anilist" && storage.get('convert-ratings') === false) {
-					currentRatingsSuffix = ['10/100', '20/100', '30/100', '40/100', '50/100', '60/100', '70/100', '80/100', '90/100', '100/100'];
-				} else if (type === "allocine") {
-					currentRatingsSuffix = ['0-★', '★', '★★', '★★★', '★★★★', '★★★★★'];
-				}
-
-
-				// Determine rating type (rating vs review)
-				let ratingType = "ratings";
-				if (type == "allocine") {
-					ratingType = "reviews";
-				}
-
-				let tooltip = `${voteCount.toLocaleString()} ${currentRatingsSuffix[ii]} ${ratingType} (${percentage.toString()}%)`
-				let href = '';
-
-				// IMDb reviews link
-				if (type == "imdb") {
-					href = url.replace('/ratings/', '/reviews/?rating=' + (ii + 1).toString());
-				} else if (type == "allocine") {
-					href = url + "star-" + ii;
-				} else {
-					href = url;
-				}
-				
-				// Now create the actual element
-				let percent = voteCount / highest;
-				const tr = this.createElement('tr', {
-					class: 'column',
-					style: `--value: ${percent};`
-				});
-
-				const td = this.createElement('td', {
-					class: 'cell'
-				});
-				tr.append(td);
-
-				const a = this.createElement('a', {
-					class: `barcolumn tooltip ${type} tooltip-extra`,
-					['data-original-title']: tooltip,
-					href: href
-				});
-				td.append(a);
-				
-				const spanBar = this.createElement('span', {
-					class: 'bar'
-				});
-				a.append(spanBar);
-				
-				const spanFill = this.createElement('span', {
-					class: 'fill'
-				});
-				spanBar.append(spanFill);
-
-				// Add to the graph
-				tbody.append(tr);
-			}
-
-			// Create the stars
-			//*********************************************/
-			const svgStart = this.createLetterboxd1Stars(type);
-			const svgEnd = this.createLetterboxd5Stars(type);
-
-
-			// Finalize the element in the correct order
-			//*********************************************/
-			layoutDiv.append(svgStart);
-			layoutDiv.append(table);
-			layoutDiv.append(svgEnd);
-			layoutDiv.append(scoreElement);
-
-			return histogram;
-		},
-
-		createLetterboxd1Stars(type){
-			// Create the ★
-			const svg = this.createElementNS('svg', 'http://www.w3.org/2000/svg', {
-				class: `glyph stars -start -rating stars-extra stars-${type}`,
-				role: 'graphics-symbol',
-				width: '9',
-				height: '9',
-				viewBox: '0 0 9 9',
-				['aria-label']: '★'
-			});
-			svg.append(this.createLetterboxdStarPath(0));
-
-			return svg;
-		},
-
-		createLetterboxd5Stars(type){
-			// Create the ★★★★★
-			const svg = this.createElementNS('svg', 'http://www.w3.org/2000/svg', {
-				class: `glyph stars -end -rating stars-extra stars-${type}`,
-				role: 'graphics-symbol',
-				width: '49',
-				height: '9',
-				viewBox: '0 0 49 9',
-				['aria-label']: '★★★★★'
-			});
-			for (var ii = 0; ii < 5; ii++){
-				svg.append(this.createLetterboxdStarPath(ii));
-			}
-
-			return svg;
-		},
-
-		createLetterboxdStarPath(ii){
-			const path = this.createElementNS('path', 'http://www.w3.org/2000/svg', {
-				transform: `translate(${ii * 10}, 0)`,
-				['fill-rule']: 'evenodd',
-				d: 'M5.065.45c-.22-.61-.95-.59-1.14 0l-.75 2.57H.705c-.73 0-.96.62-.37 1.07l1.99 1.53-.76 2.49c-.22.73.34 1.16.93.71l2-1.53 2 1.53c.59.45 1.15.02.93-.71l-.76-2.49 1.99-1.53c.59-.45.39-1.07-.33-1.07h-2.48z'
-			});
-
-			return path;
-		},
-
-		createAllocineCriticScore(type, rating, count, reviewCount, url, isMobile) {
-			// The span that holds the score
-			var style = "display: inline-block; margin-right: 5px;";
-			if (type == "ratings-style") {
-				style = "display: block;"
-			}
-
-			var className = 'allocine-critic';
-			if (type == "filmarks")
-				className = 'filmarks';
-
-			const scoreSpan = this.createElement('span', {
-				class: className,
-				style: style
-			});
-
-			var convert10Point = (letterboxd.storage.get('convert-ratings') === "10");
-			var suffix = "/10";
-			var tooltip = "";
-			if (rating == 0) {
-				tooltip = "0 ratings";
-			} else {
-				// Convert the score if needed
-				if (convert10Point) {
-					rating = Number(rating) * 2;
-					suffix = "/10";
-				} else {
-					suffix = "/5";
-				}
-				// Create tooltip text
-				tooltip = 'Weighted average of ' + rating + suffix + ' based on ' + count.toLocaleString() + ' ratings'
-				if (reviewCount != null)
-					tooltip += " (" + reviewCount.toLocaleString() + " reviews)";
-			}
-
-			// The element that is the score itself
-			style = '';
-			if (type == "ratings-style") {
-				style = 'line-height: 28px; width: 100%; margin-left: 0px !important;';
-			}
-
-			const scoreElement = this.createElement('a', {
-				class: 'tooltip display-rating -highlight allocine-critic-score tooltip-extra',
-				style: style,
-				href: url,
-				['data-original-title']: tooltip
-			});
-
-			if (rating == "0") {
-				scoreElement.innerText = "--";
-			} else {
-				scoreElement.innerText = rating.toFixed(1);
-			}
-
-			scoreSpan.append(scoreElement);
-
-			return scoreSpan;
-		},
-
-		createDynamicStars(type, rating) {
-			var holder = letterboxd.helpers.createElement('div', {
-				class: `dynamic-star-holder ${type}-stars`
-			});
-
-			// Create the background stars
-			const svgBacking = this.createElementNS('svg', 'http://www.w3.org/2000/svg', {
-				class: `glyph stars -end -rating stars-extra stars-background`,
-				role: 'graphics-symbol',
-				width: '49',
-				height: '9',
-				viewBox: '0 0 49 9'
-			},{
-				position: 'absolute',
-			});
-			for (var ii = 0; ii < 5; ii++){
-				svgBacking.append(this.createLetterboxdStarPath(ii));
-			}
-			holder.append(svgBacking);
-
-			rating = letterboxd.helpers.roundHalf(rating);
-
-			// Star front
-			// determine width
-			let totalWidth = 49;
-			let rounded = (Math.round(rating * 2) / 2).toFixed(1); // round to the nearest .5
-			let percent = rounded / 5
-			let width = totalWidth * percent;
-
-			//let starWidth = totalWidth / 5;
-			//var width = starWidth * Math.floor(rating) + Math.floor(rating);
-			//if (rating > Math.floor(rating)) {
-			//	width += starWidth / 2;
-			//}
-
-			const div = this.createElement('div', {
-			},{
-				height: '9',
-				position: 'absolute',
-				overflow: 'hidden',
-				width: `${width}px`
-			});
-
-			const svgFront = this.createElementNS('svg', 'http://www.w3.org/2000/svg', {
-				class: `glyph stars -end -rating stars-extra stars-${type}`,
-				role: 'graphics-symbol',
-				width: totalWidth,
-				height: '9',
-				viewBox: '0 0 49 9'
-			},{
-				display: 'block',
-			});
-			for (var ii = 0; ii < 5; ii++){
-				svgFront.append(this.createLetterboxdStarPath(ii));
-			}
-			div.append(svgFront);
-
-			holder.append(div);
-
-			return holder;
-		},
-
 		createDetailsText(type, section, tooltip, isMobile) {
-			const detailsSpan = letterboxd.helpers.createElement('span', {
-				class: type + '-score-details mobile-details-text'
-			});
-			if (letterboxd.storage.get('tooltip-show-details') != true) {
-				detailsSpan.style['display'] = 'none';
-			}
-
-			const detailsText = letterboxd.helpers.createElement('p', {
-			});
-			detailsText.innerText = tooltip;
-			detailsSpan.append(detailsText);
+			const detailsSpan = DetailsText({ type, tooltip, storage: letterboxd.storage });
 
 			if (isMobile || letterboxd.storage.get('tooltip-show-details') === true) {
 				section.append(detailsSpan);
 			}
 		},
 
-		roundHalf(num) {
-			return Math.round(num * 2) / 2;
+		getRatingsSuffix() {
+			return letterboxd.overview.ratingsSuffix;
 		},
 
 		parseHTML(html) {
 			var parser = new DOMParser();
 			return parser.parseFromString(html, "text/html");
-		},
-
-		createChartSectionElement(sectionID) {
-			return this.createElement('section', {
-				class: `extras-section ratings-histogram-chart ${sectionID}-ratings ratings-extras`
-			});
-		},
-
-		createChartSectionHeader(headerStyle) {
-
-			const headerProps = {
-				class: 'section-heading section-heading-extras',
-				...(headerStyle ? {style: headerStyle} : {} )
-			}
-
-			const heading = this.createElement('h2', headerProps);
-			return heading;
-
-		},
-
-		createChartSectionLogoHolder(sectionID, logoProps) {
-
-			const logoHolder = letterboxd.helpers.createElement('a', {
-				class: `logo-${sectionID}`,
-				href: logoProps.href,
-				style: logoProps.style
-			});
-
-			if (logoProps.svg){
-				logoHolder.append(logoProps.svg);
-			}
-
-			return logoHolder;
-
-		},
-
-		createChartSection(sectionID, logoProps, headerStyle) {
-
-			const chartSection = this.createChartSectionElement(sectionID);
-			const heading = this.createChartSectionHeader(headerStyle);
-			chartSection.append(heading);
-
-			const logoHolder = this.createChartSectionLogoHolder(sectionID, logoProps);
-			heading.append(logoHolder);
-
-			if (letterboxd.overview.pageState.isMobile) {
-				// Add the Show Details button
-				const showDetails = letterboxd.helpers.createShowDetailsButton(sectionID, `${sectionID}-score-details`);
-				chartSection.append(showDetails);
-			}
-
-			return chartSection;
-
 		},
 
 		cleanNumber(value) {
@@ -2508,19 +1932,16 @@ const letterboxd = {
 			cell1.appendChild(document.createTextNode(label));
 
 			// Add value cells
-			var div1 = this.createElement("div", { class: 'extras-table-value' })
-			div1.innerText = value1;
+			var div1 = TableRowValue({ value: value1 });
 			cell2.appendChild(div1);
 
 			if (value2 != null) {
-				var div2 = this.createElement("div", { class: 'extras-table-value' })
-				div2.innerText = value2;
+				var div2 = TableRowValue({ value: value2 });
 				cell2.appendChild(div2);
 			}
 
 			if (value3 != null) {
-				var div3 = this.createElement("div", { class: 'extras-table-value' })
-				div3.innerText = value3;
+				var div3 = TableRowValue({ value: value3 });
 				cell2.appendChild(div3);
 			}
 		},

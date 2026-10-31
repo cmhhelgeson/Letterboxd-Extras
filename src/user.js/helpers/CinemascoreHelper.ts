@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { PageState, StorageObject } from '../types/types';
 import { Helper } from './Helper';
+import { createElement } from '../components/dom';
 
 /** One film in a CinemaScore title search. */
 interface CinemascoreFilm {
@@ -214,30 +215,30 @@ export class CinemascoreHelper extends Helper {
 		this.ratingsAdded = true;
 
 		// Add the section to the page
-		const section = this.helpers.createElement('section', {
+		const section = createElement('section', {
 			class: 'extras-section ratings-histogram-chart cinemascore ratings-extras'
 		});
 
 		// Add the Header
-		const heading = this.helpers.createElement('h2', {
+		const heading = createElement('h2', {
 			class: 'section-heading section-heading-extras',
 			style: 'height: 13px;'
 		});
 		section.append(heading);
-		const headerTitle = this.helpers.createElement('a', {
+		const headerTitle = createElement('a', {
 			href: 'https://www.cinemascore.com/'
 		});
 		headerTitle.innerText = 'CinemaScore';
 		heading.append(headerTitle);
 
 		// The span that holds the score
-		const span = this.helpers.createElement('span', {
+		const span = createElement('span', {
 			style: 'display: inline-block;'
 		});
 		section.append(span);
 
 		// The element that is the score itself
-		const scoreText = this.helpers.createElement('a', {
+		const scoreText = createElement('a', {
 			class: 'tooltip display-rating -highlight cinema-grade'
 		});
 		scoreText.innerText = this.result.GRADE;

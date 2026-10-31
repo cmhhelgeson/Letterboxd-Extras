@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { LOAD_STATES } from '../constants';
 import { PageState, SourceIdentifier, StorageObject } from '../types/types';
+import { ButtonLink } from '../components/ButtonLink';
+import { DetailsText } from '../components/DetailsText';
+import { RatingsHolder, ShowRatingsButton } from '../components/RatingsHolder';
+import { ScoreSpan } from '../components/ScoreSpan';
+import { SpineIndicator } from '../components/SpineIndicator';
+import { WatchLink, WatchLinkOptions, WatchServices } from '../components/WatchLink';
 
 type ButtonSelector = `.${SourceIdentifier}-button`;
 type ButtonClassName = `${SourceIdentifier}-button`;
@@ -27,31 +33,6 @@ const buttonLinkOrder: ButtonSelector[] = [
 	'.ebert-button'
 ];
 
-// Most class names are built from a helper's selectorPrefix. A few sources predate that convention,
-// and their CSS still expects an older name; these maps give that name, per element, keyed by
-// selectorPrefix. A prefix that is not listed uses itself.
-
-/** Class name stem for the logo link, as in `logo-${name}`. */
-const logoClassNames: Partial<Record<SourceIdentifier, string>> = {
-	tomato: 'tomatoes'
-};
-
-/**
- * Name of the SHOW DETAILS button, as in `${name}-show-details`, and of the details it toggles,
- * `${name}-score-details`. toggleDetails (common/additional.js) also stores the shown/hidden choice
- * under `${name}-score-details`, so changing a name here forgets users' saved preference.
- */
-const showDetailsNames: Partial<Record<SourceIdentifier, string>> = {
-	tomato: 'rt'
-};
-
-interface LogoProps {
-	href: string
-	style?: string
-	innerHTML?: string
-	svg?: HTMLElement
-}
-
 interface SpineIndicatorProps {
 	logoSVG: HTMLElement
 	title: string
@@ -63,15 +44,6 @@ interface APIRequestCallbackOptions {
 	type: string
 	url: string
 	options?: object
-}
-
-interface SpineAttrs {
-	class: string
-	href: string
-	title: string
-	target: '_blank',
-	rel: 'noopener noreferrer',
-	'data-view'?: string
 }
 
 /** The denominator shown after a score, chosen by the 'convert-ratings' setting. */
@@ -87,22 +59,6 @@ interface AverageScore {
 	 */
 	score: string | null
 	totalScore: ScoreDenominator
-}
-
-interface WatchLinkOptions {
-	title: string
-	link: string
-	sourceID: string
-}
-
-interface PurchaseOption {
-	text: string
-	link: string
-}
-
-interface PurchaseSourceOptions {
-	sourceName: string
-	sourceID: string
 }
 
 /**
@@ -305,22 +261,11 @@ export class Helper {
 
 		const currentSidebar = document.querySelector('.sidebar') as Element;
 
-		const sidebar = this.helpers.createElement('div', {
-			class: 'extras-ratings-holder',
-			style: 'display: none'
-		});
+		const sidebar = RatingsHolder();
 		currentSidebar.append(sidebar);
 
-		const moreButton = this.helpers.createElement('a', {
-			class: 'text-slug extras-show-more'
-		});
-		moreButton.innerText = 'Show ratings';
+		const moreButton = ShowRatingsButton();
 		currentSidebar.append(moreButton);
-
-		moreButton.addEventListener('click', event => {
-			// @ts-ignore toggleAllRatings is a global, defined in common/additional.js
-			toggleAllRatings(event);
-		});
 
 		return sidebar;
 	}
@@ -410,15 +355,7 @@ export class Helper {
 			}
 
 			// Create Button Element
-			const button = this.helpers.createElement('a', {
-				class: `micro-button track-event extras-button ${className}`,
-				href: url
-			});
-			button.innerText = text;
-
-			if (this.storage.get('open-same-tab') !== true) {
-				button.setAttribute('target', '_blank');
-			}
+			const button = ButtonLink({ className, url, text, openInNewTab: this.storage.get('open-same-tab') !== true });
 
 			const index = buttonLinkOrder.indexOf(`.${className}`);
 			// First Attempt
@@ -483,17 +420,7 @@ export class Helper {
 
 		const { isMobile } = this.pageState;
 
-		const detailsSpan = this.helpers.createElement('span', {
-			class: `${this.selectorPrefix}-score-details mobile-details-text`
-		});
-
-		if (this.storage.get('tooltip-show-details') !== true) {
-			detailsSpan.style.display = 'none';
-		}
-
-		const detailsText = this.helpers.createElement('p', {});
-		detailsText.innerText = tooltip;
-		detailsSpan.append(detailsText);
+		const detailsSpan = DetailsText({ type: this.selectorPrefix, tooltip, storage: this.storage });
 
 		if (isMobile || this.storage.get('tooltip-show-details') === true) {
 			section.append(detailsSpan);
@@ -551,170 +478,10 @@ export class Helper {
 
 		const { isMobile } = this.pageState;
 
-		// The span that holds the score
-		const scoreSpan = this.helpers.createElement('span', {
-			class: `${this.selectorPrefix}-score`
-		}, {
-			display: 'inline-block'
-		});
-
 		const { tooltip, score, totalScore } = this._getAverageScore(this.rating, this.ratingAlt);
 		this.tooltip = tooltip;
 
-		// The element that is the score itself
-		const scoreText = this.helpers.createElement('a', {
-			class: `tooltip tooltip-extra display-rating -highlight ${this.selectorPrefix}-score`
-		});
-
-		if (isMobile === true) scoreText.setAttribute('class', `${scoreText.getAttribute('class')} extras-mobile`);
-		scoreText.innerText = score;
-		scoreText.setAttribute('data-original-title', tooltip);
-		scoreText.setAttribute('href', href);
-
-		scoreSpan.append(scoreText);
-
-		// Create score denominator
-		// Only add the denominator to match the styles of specific sites
-		if (this.selectorPrefix === 'mubi' ||
-			this.selectorPrefix === 'kinopoisk' ||
-			this.selectorPrefix === 'simkl'
-		){
-			const scoreTotal = this.helpers.createElement('p', {
-				style: 'display: inline-block; font-size: 10px; color: darkgray; margin-bottom: 0px;'
-			});
-			scoreTotal.innerText = totalScore;
-			scoreSpan.append(scoreTotal);
-		}
-
-		return scoreSpan;
-
-	}
-
-	/**
-	 * Creates a section element that will be used on the Letterboxd sidebar.
-	 * @returns {HTMLSectionElement}
-	 * @protected
-	 */
-	_createChartSectionElement(isChart: boolean) {
-
-		if (isChart) {
-
-			return this.helpers.createElement('section', {
-				class: `extras-section ratings-histogram-chart ${this.selectorPrefix}-ratings ratings-extras extras-chart`
-			});
-
-		} else {
-
-			return this.helpers.createElement('section', {
-				class: `extras-section ratings-histogram-chart ${this.selectorPrefix}-ratings ratings-extras`
-			});
-
-		}
-
-	}
-
-	/**
-	 * Creates a header for a Letterboxd sidebar section.
-	 *
-	 * @param {string} [headerStyle] - CSS style string to apply to the heading
-	 * @returns {HTMLHeadingElement}
-	 * @protected
-	 */
-	_createChartSectionHeader(headerStyle?: string) {
-
-		const headerProps = {
-			class: 'section-heading section-heading-extras',
-			...(headerStyle ? { style: headerStyle } : {})
-		};
-
-		const heading = this.helpers.createElement('h2', headerProps);
-		return heading;
-
-	}
-
-	/**
-	 * Creates a holder for the data source's logo on the sidebar section.
-	 *
-	 * @param {Object} logoProps
-	 * @param {string} logoProps.href - The URL the logo links to
-	 * @param {string} [logoProps.style] - CSS style string for the logo element
-	 * @param {string} [logoProps.innerHTML] - HTML string to set as the logo's inner content
-	 * @returns {HTMLAnchorElement}
-	 * @protected
-	 */
-	_createChartSectionLogoHolder(logoProps: LogoProps) {
-
-		const logoHolder = this.helpers.createElement('a', {
-			class: `logo-${logoClassNames[this.selectorPrefix] ?? this.selectorPrefix}`,
-			href: logoProps.href,
-			style: logoProps.style
-		});
-
-		if (logoProps.svg){
-			logoHolder.append(logoProps.svg);
-		}
-
-		return logoHolder;
-
-	}
-
-	/**
-	 * Creates a "SHOW DETAILS" button for mobile views.
-	 *
-	 * @returns {HTMLAnchorElement}
-	 * @protected
-	 */
-	_createShowDetailsButton() {
-
-		const { isMobile } = this.pageState;
-		const name = showDetailsNames[this.selectorPrefix] ?? this.selectorPrefix;
-
-		// Add the Show Details button
-		const showDetails = this.helpers.createElement('a', {
-			class: `all-link more-link show-details ${name}-show-details`,
-			'target': `${name}-score-details`
-		});
-		showDetails.innerText = 'SHOW DETAILS';
-
-		// Add click event
-		showDetails.addEventListener('click', event => {
-			// @ts-ignore toggleDetails is a global, defined in common/additional.js
-			toggleDetails(event, this.storage, isMobile);
-		});
-
-		return showDetails;
-	}
-
-
-	/**
-	 * Creates the base section element for the data source's sidebar ratings element.
-	 *
-	 * @param {Object} logoProps
-	 * @param {string} logoProps.href - The URL the logo links to
-	 * @param {string} [logoProps.style] - CSS style string for the logo element
-	 * @param {string} [logoProps.innerHTML] - HTML string to set as the logo's inner content
-	 * @param {string} [headerStyle] - CSS style string to apply to the heading
-	 * @returns {HTMLSectionElement}
-	 * @protected
-	 */
-	_createChartSection(logoProps: LogoProps, headerStyle?: string) {
-
-		const { isMobile } = this.pageState;
-
-		const chartSection = this._createChartSectionElement(false);
-		const heading = this._createChartSectionHeader(headerStyle);
-		chartSection.append(heading);
-
-		const logoHolder = this._createChartSectionLogoHolder(logoProps);
-		heading.append(logoHolder);
-
-		if (isMobile) {
-			// Add the Show Details button
-			const showDetails = this._createShowDetailsButton();
-			chartSection.append(showDetails);
-		}
-
-		return chartSection;
+		return ScoreSpan({ selectorPrefix: this.selectorPrefix, isMobile, score, tooltip, totalScore, href });
 
 	}
 
@@ -737,124 +504,11 @@ export class Helper {
 		let sections: Element | null = watchSection.querySelector('.services');
 
 		if (sections === null) {
-			// helpers.createElement is untyped, so name the element's type here: without it
-			// `sections` stays Element | null and every use below is an error.
-			const servicesContainer: HTMLDivElement = this.helpers.createElement('div', {
-				class: 'services'
-			});
-			sections = servicesContainer;
+			sections = WatchServices();
 			watchSection.append(sections);
 		}
 
-		const serviceParagraph: HTMLParagraphElement = this.helpers.createElement('p', {
-			class: 'service extras-service',
-			id: `source-${options.sourceID}`
-		});
-
-
-		serviceParagraph.append(this._createWatchLinkDisplay(options));
-		serviceParagraph.append(this._createWatchLinkPurchaseOptions(
-			[{ text: 'Buy', link: options.link }], { sourceID: options.sourceID, sourceName: options.title }
-		));
-
-		sections.append(serviceParagraph);
-
-	}
-
-	_createWatchLinkDisplay(options: WatchLinkOptions) {
-
-		const watchLinkDisplay = this.helpers.createElement('a', {
-			class: 'label track-event tooltip',
-			'data-track-action': 'availability',
-			target: '_blank',
-			rel: 'nofollow noopener noreferrer',
-			'data-original-title': `View on ${options.title}`,
-			'data-track-params': `{"service": "${options.sourceID}"}`,
-			href: options.link
-		});
-		watchLinkDisplay.setAttribute('data-track-action', 'availability');
-		watchLinkDisplay.setAttribute('data-original-title', `View on ${options.title}`);
-		watchLinkDisplay.setAttribute('data-track-params', `{"service": "${options.sourceID}"}`);
-
-		const brandElement = this.helpers.createElement('span', {
-			class: 'brand'
-		});
-
-		//brandElement.innerHTML += '<svg></svg>';
-
-		const titleElement = this.helpers.createElement('span', {
-			class: 'title'
-		});
-		const nameSpan = this.helpers.createElement('span', {
-			class: 'name'
-		});
-		nameSpan.innerText = options.title;
-		titleElement.append(nameSpan);
-
-		watchLinkDisplay.append(brandElement);
-		watchLinkDisplay.append(titleElement);
-
-		return watchLinkDisplay;
-
-
-	}
-
-	/**
-	 * Creates a purchase option button on a watch service row in the watch section.
-	 *
-	 * @param {Object} purchaseOption - Options related to the purchasing action itself.
-	 * @param {string} purchaseOption.text - Verb for the purchase action.
-	 * @param {string} purchaseOption.link - Link directing the user to the purchase option (in most cases is just the link to the film itself)
-	 * @param {Object} sourceOption - Options related to the source for the purchase action.
-	 * @param {string} sourceOption.sourceName - Name of the source.
-	 * @param {string} sourceOption.sourceID - The id of the source
-	 * @returns {HTMLSpanElement}
-	 * @protected
-	 */
-	_createWatchLinkPurchaseButton(
-		purchaseOption: PurchaseOption, 
-		sourceOptions: PurchaseSourceOptions
-	) {
-
-		const purchaseButton = this.helpers.createElement('a', {
-			class: `link -${purchaseOption.text.toLowerCase()} track-event`,
-			'data-track-action': 'availability',
-			'data-track-params': `{"service": "${sourceOptions.sourceID}"}`,
-			href: purchaseOption.link,
-			title: `${purchaseOption.text} from ${sourceOptions.sourceName}`,
-			target: '_blank',
-			rel: 'nofollow noopener noreferrer'
-		});
-
-		const textSpan = this.helpers.createElement('span', {
-			class: 'extended'
-		});
-		textSpan.innerText = purchaseOption.text;
-
-		purchaseButton.append(textSpan);
-
-		return purchaseButton;
-
-	}
-
-	_createWatchLinkPurchaseOptions(
-		purchaseOptions: PurchaseOption[], 
-		sourceOptions: PurchaseSourceOptions
-	) {
-
-		const purchaseOptionsSpan = this.helpers.createElement('span', {
-			class: 'options js-film-availability-options'
-		});
-
-		for (const purchaseOption of purchaseOptions) {
-
-			purchaseOptionsSpan.append(
-				this._createWatchLinkPurchaseButton(purchaseOption, sourceOptions)
-			);
-
-		}
-
-		return purchaseOptionsSpan;
+		sections.append(WatchLink(options));
 
 	}
 
@@ -871,44 +525,18 @@ export class Helper {
 
 		if (posterSection.querySelector('.extras-spine-indicator') !== null) return;
 
-		const spineLinkAttrs: SpineAttrs = {
-			class: `extras-spine-indicator criterion-spine${isMobile ? ' mobile' : ''}`,
-			href: this.linkURL,
-			title: `${title} - Spine #${spineID}`,
-			target: '_blank',
-			rel: 'noopener noreferrer',
-		};
-
+		let view: 'row' | 'left-right' | undefined;
 		const viewMode = this.storage.get('criterion-spine-default-view');
 		if (viewMode === 'None'){
 			this.spineAdded = true;
 			return;
 		} else if (viewMode === 'Row') {
-			spineLinkAttrs['data-view'] = 'row';
+			view = 'row';
 		} else if (viewMode === 'Left/Right') {
-			spineLinkAttrs['data-view'] = 'left-right';
+			view = 'left-right';
 		}
 
-		const spineLink = this.helpers.createElement('a', spineLinkAttrs);
-
-		const logoContainer = this.helpers.createElement('span', {
-			class: 'spine-logo'
-		});
-		logoContainer.append(logoSVG);
-		spineLink.append(logoContainer);
-
-		if (spineID) {
-
-			const spineStr = String(spineID);
-			const digitCount = spineStr.length;
-			const spineClass = digitCount <= 2 ? `spine-number spine-digits-${digitCount}` : 'spine-number';
-			const spineNumber = this.helpers.createElement('span', {
-				class: spineClass
-			});
-			spineNumber.innerText = spineID;
-			spineLink.append(spineNumber);
-
-		}
+		const spineLink = SpineIndicator({ href: this.linkURL, title, spineID, logoSVG, isMobile, view });
 
 		if (isMobile){
 			posterSection.append(spineLink);

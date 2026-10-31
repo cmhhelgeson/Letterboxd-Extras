@@ -2,6 +2,8 @@
 import { LOAD_STATES } from '../constants';
 import { PageState, StorageObject } from '../types/types';
 import { Helper } from './Helper';
+import { ChartSection } from '../components/ChartSection';
+import { createElement } from '../components/dom';
 
 const API_URL = 'https://apollo.senscritique.com/';
 
@@ -298,12 +300,17 @@ export class SensCritiqueHelper extends Helper {
 			return;
 		}
 
-		const section: HTMLElement = this._createChartSection({
-			href: this.linkURL,
-			style: `height: 25px; width: 110px; position: absolute; background-image: url("${browser.runtime.getURL('images/senscritique-logo.svg')}");`
+		const section: HTMLElement = ChartSection({
+			selectorPrefix: this.selectorPrefix,
+			logoProps: {
+				href: this.linkURL,
+				style: `height: 25px; width: 110px; position: absolute; background-image: url("${browser.runtime.getURL('images/senscritique-logo.svg')}");`
+			},
+			isMobile: this.pageState.isMobile,
+			storage: this.storage
 		});
 
-		const container: HTMLElement = this.helpers.createElement('span', {}, {
+		const container: HTMLElement = createElement('span', {}, {
 			'display': 'block',
 			'margin-bottom': '10px'
 		});
@@ -348,23 +355,23 @@ export class SensCritiqueHelper extends Helper {
 
 	_createScore(tooltip: string, displayRating: string): HTMLElement {
 
-		const span: HTMLElement = this.helpers.createElement('div', {}, {
+		const span: HTMLElement = createElement('div', {}, {
 			'display': 'inline-block',
 			'width': 'auto'
 		});
 
-		const ratingHolder: HTMLElement = this.helpers.createElement('a', {
+		const ratingHolder: HTMLElement = createElement('a', {
 			class: 'tooltip tooltip-extra sens-score'
 		});
 		ratingHolder.setAttribute('data-original-title', tooltip);
 		ratingHolder.setAttribute('href', `${this.linkURL}/critiques`);
 
-		const ratingIcon: HTMLElement = this.helpers.createElement('span', {
+		const ratingIcon: HTMLElement = createElement('span', {
 			class: 'sens-score-icon'
 		});
 		ratingHolder.append(ratingIcon);
 
-		const ratingText: HTMLElement = this.helpers.createElement('span', {
+		const ratingText: HTMLElement = createElement('span', {
 			class: 'display-rating -highlight'
 		});
 		ratingText.innerText = displayRating;
@@ -386,14 +393,14 @@ export class SensCritiqueHelper extends Helper {
 	/** The "♥ count" recommend total, when the sens-favorites setting is on. */
 	_createFavoritesText(recommendCount: number): HTMLElement {
 
-		const textSpan: HTMLElement = this.helpers.createElement('div', {}, {
+		const textSpan: HTMLElement = createElement('div', {}, {
 			'display': 'inline-block',
 			'width': 'auto',
 			'vertical-align': 'top'
 		});
 
 		if (this.storage.get('sens-favorites-enabled') === true) {
-			const text: HTMLElement = this.helpers.createElement('p', {
+			const text: HTMLElement = createElement('p', {
 				class: 'display-rating sens-text'
 			});
 			text.innerText = `♥ ${recommendCount.toLocaleString()}`;

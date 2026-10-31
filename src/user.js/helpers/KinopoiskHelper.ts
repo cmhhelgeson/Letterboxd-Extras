@@ -2,6 +2,8 @@
 import { LOAD_STATES } from '../constants';
 import { PageState, StorageObject } from '../types/types';
 import { Helper } from './Helper';
+import { ChartSection } from '../components/ChartSection';
+import { createElement } from '../components/dom';
 
 export class KinopoiskHelper extends Helper {
 
@@ -72,17 +74,20 @@ export class KinopoiskHelper extends Helper {
 		//* **************************************************************
 		// Add the section to the page
 
-		const section = this._createChartSection(
-			{
+		const section = ChartSection({
+			selectorPrefix: this.selectorPrefix,
+			logoProps: {
 				href: this.linkURL,
 				style: `position: absolute; background-image: url("${browser.runtime.getURL('images/kinopoisk-logo-rus.svg')}")`
 			},
-			'height: 13px'
-		);
+			headerStyle: 'height: 13px',
+			isMobile: this.pageState.isMobile,
+			storage: this.storage
+		});
 
 		// Score
 		//* **************************************************************
-		const container = this.helpers.createElement('span', {}, {
+		const container = createElement('span', {}, {
 			'display': 'block',
 			'margin-bottom': '10px'
 		});

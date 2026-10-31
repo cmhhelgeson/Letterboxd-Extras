@@ -2,6 +2,10 @@
 import { LOAD_STATES } from '../constants';
 import { PageState, StorageObject } from '../types/types';
 import { Helper } from './Helper';
+import { AllocineCriticScore } from '../components/AllocineCriticScore';
+import { ChartSection } from '../components/ChartSection';
+import { DynamicStars } from '../components/DynamicStars';
+import { createElement } from '../components/dom';
 
 const API_URL = 'https://markuapi.kabk.dev/';
 
@@ -167,7 +171,7 @@ export class FilmarksHelper extends Helper {
 		if (data.rating != null && data.rating !== '-') {
 			this.rating = Number(data.rating);
 		}
-		// Passed through as-is: createAllocineCriticScore calls toLocaleString on it, which leaves an already formatted string alone
+		// Passed through as-is: AllocineCriticScore calls toLocaleString on it, which leaves an already formatted string alone
 		const markCount = data.mark_count != null && data.mark_count !== '-' ? data.mark_count : 0;
 		this.num_ratings = Number(markCount);
 
@@ -179,21 +183,32 @@ export class FilmarksHelper extends Helper {
 			return;
 		}
 
-		const section: HTMLElement = this._createChartSection(
-			{
+		const section: HTMLElement = ChartSection({
+			selectorPrefix: this.selectorPrefix,
+			logoProps: {
 				href: this.linkURL,
 				style: `position: absolute; background-image: url("${browser.runtime.getURL('images/filmarks-logo.svg')}");`
 			},
-			'height: 20px !important;'
-		);
+			headerStyle: 'height: 20px !important;',
+			isMobile: this.pageState.isMobile,
+			storage: this.storage
+		});
 
-		const ratingSpan: HTMLElement = this.helpers.createElement('span', {
+		const ratingSpan: HTMLElement = createElement('span', {
 			class: 'filmarks-score toggle-score-display',
 			style: 'position: relative; display: block;'
 		});
 
-		ratingSpan.append(this.helpers.createAllocineCriticScore('filmarks', this.rating, markCount, null, this.linkURL, this.pageState.isMobile));
-		ratingSpan.append(this.helpers.createDynamicStars('filmarks', this.rating));
+		ratingSpan.append(AllocineCriticScore({
+			type: 'filmarks',
+			rating: this.rating,
+			count: markCount,
+			reviewCount: null,
+			url: this.linkURL,
+			isMobile: this.pageState.isMobile,
+			storage: this.storage
+		}));
+		ratingSpan.append(DynamicStars({ type: 'filmarks', rating: this.rating }));
 		section.append(ratingSpan);
 
 		// Add the tooltip as text for mobile

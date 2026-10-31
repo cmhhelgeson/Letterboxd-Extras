@@ -2,6 +2,8 @@
 import { LOAD_STATES } from '../constants';
 import { PageState, StorageObject } from '../types/types';
 import { Helper } from './Helper';
+import { ChartSection } from '../components/ChartSection';
+import { createElement } from '../components/dom';
 
 /** The parts of Douban's /v2/movie/subject/{id} response this helper reads. */
 interface DoubanSubject {
@@ -84,7 +86,7 @@ export class DoubanHelper extends Helper {
 		if (this.rating == null && this.num_ratings === 0) return;
 
 
-		const logoSvg = this.helpers.createElement('span', {}, {
+		const logoSvg = createElement('span', {}, {
 			height: '16.7667px',
 			width: '65px',
 			display: 'inline-block',
@@ -92,22 +94,25 @@ export class DoubanHelper extends Helper {
 			'margin-bottom': '2px',
 			'background-image': 'url("' + browser.runtime.getURL("images/douban-logo.svg") + '")'
 		});
-		const section = this._createChartSection(
-			{
+		const section = ChartSection({
+			selectorPrefix: this.selectorPrefix,
+			logoProps: {
 				svg: logoSvg,
 				href: this.linkURL
-			}
-		);
+			},
+			isMobile: this.pageState.isMobile,
+			storage: this.storage
+		});
 
-		const logoHolder = section.querySelector('.logo-douban');
-		const logoText = this.helpers.createElement('span', {
+		const logoHolder = section.querySelector('.logo-douban') as HTMLElement;
+		const logoText = createElement('span', {
 			class: 'text-douban'
 		});
 		logoText.innerText = '(豆瓣电影)';
 		logoHolder.append(logoText);
 
 
-		const container = this.helpers.createElement('span', {}, {
+		const container = createElement('span', {}, {
 			'display': 'block',
 			'margin-bottom': '10px'
 		});
