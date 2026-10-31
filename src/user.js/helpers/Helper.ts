@@ -18,7 +18,6 @@ const buttonLinkOrder: ButtonSelector[] = [
 	'.mdl-button',
 	'.mal-button',
 	'.anilist-button',
-	'.anidb-button',
 	'.filmarks-button',
 	'.criterion-button',
 	'.mojo-button',
@@ -934,14 +933,4 @@ export class Helper {
 		});
 	}
 
-	getTextBetween(text: string, start: string, end: string): string {
-		let tempArray = text.split(start);
-		if (tempArray.length >= 2) {
-			tempArray = tempArray[1].split(end);
-
-			return (tempArray[0]);
-		} else {
-			return ""
-		}
-	}
 }

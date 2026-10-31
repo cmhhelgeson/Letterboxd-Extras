@@ -2,7 +2,7 @@
 
 import { LOAD_STATES } from './constants';
 import { AnilistHelper } from './helpers/AnilistHelper';
-import { MubiHelper} from './helpers/MubiHelper';
+import { MubiHelper } from './helpers/MubiHelper';
 import { FilmAffinityHelper } from './helpers/FilmAffinityHelper';
 import { LetterboxdPerson } from './letterboxd-person';
 import { LetterboxdGeneral } from './letterboxd-general';
@@ -22,6 +22,7 @@ import { MetacriticHelper } from './helpers/MetacriticHelpers';
 import { RankingHelper } from './helpers/RankingHelper';
 import { RottenTomatoesHelper } from './helpers/RottenTomatoesHelper';
 import { CastHelper } from './helpers/CastHelper';
+import { IMDBHelper } from './helpers/IMDBHelper';
 
 import styles from './styles/letterboxd-extras.css';
 
@@ -68,7 +69,8 @@ const letterboxd = {
 
 		// IMDb
 		imdbID: "",
-		imdbData: { state: 0, url: "", data: null, raw: null, data2: null, rating: "", num_ratings: "", highest: 0, votes: new Array(10), percents: new Array(10), isMiniSeries: false, isTVEpisode: false, mpaa: null },
+		imdbURL: "",
+		imdbHelper: null,
 
 		// TMDB
 		tmdbID: '',
@@ -99,7 +101,7 @@ const letterboxd = {
 			countries: [],
 			date: { value: null, precision: null },
 			date_origin: { value: null, precision: null },
-			US_Title: null, Alt_Title: null, TV_Start: null, TV_End: null, AniDB_ID: null, AniList_ID: null, MAL_ID: null,
+			US_Title: null, Alt_Title: null, TV_Start: null, TV_End: null, AniList_ID: null, MAL_ID: null,
 			Mubi_ID: null, Mubi_URL: null,
 			FilmAffinity_ID: null, FilmAffinity_URL: null,
 			SensCritique_ID: null, SensCritique_URL: null,
@@ -147,7 +149,7 @@ const letterboxd = {
 		doubanHelper: null,
 
 		// MyDramaList
-		myDramaListHelper: null,
+		// myDramaListHelper: null,
 
 		// Criterion
 		criterionHelper: null,
@@ -559,7 +561,7 @@ const letterboxd = {
 
 			// Cast Extras
 			if (letterboxd.storage.get('cast-extras-enabled') === true && !this.castHelper.rendered) {
-				this.castHelper.render(this.imdbData.data, this.loggedIn);
+				this.castHelper.render(this.imdbHelper.data, this.loggedIn);
 			}
 
 			// First Get the IMDb link 
@@ -583,34 +585,27 @@ const letterboxd = {
 				}
 				this.cinemascoreHelper.updateReleaseYears([this.wikiData.date.value, this.wikiData.date_origin.value]);
 
-				if (this.imdbID != "" && this.imdbData.state < 1) {
+				if (this.imdbID != "" && this.imdbHelper.loadState == LOAD_STATES['Uninitialized']) {
 					// Call IMDb and Add to page when done
 					if (letterboxd.storage.get('imdb-enabled') === true || letterboxd.storage.get('imdb-250-enabled') === true || letterboxd.storage.get('cast-extras-enabled') === true) {
-						this.imdbData.state = 1;
-
-						var options = letterboxd.helpers.getImdbQuery(this.imdbID);
-						browser.runtime.sendMessage({ name: "GETDATA", type: "JSON", url: 'https://api.graphql.imdb.com/', options: options }, (value) => {
-							if (letterboxd.helpers.ValidateResponse("IMDb Ratings", value) == false){
-								return;
-							}
-
-							if (value.response != null && value.response.data != null){
-								this.imdbData.data = value.response.data;
-
-								if (letterboxd.storage.get('imdb-enabled') === true){
-									this.addIMDBScore();
-								}
-								
+						this.imdbHelper.getData({
+							id: this.imdbID,
+							url: this.imdbURL,
+							onLoad: (imdb) => {
+								// The same response feeds the Top 250 ranking and Cast Extras
 								if (letterboxd.storage.get('imdb-250-enabled') === true && this.rankingHelper.imdbData.loadState == LOAD_STATES['Uninitialized']){
-									this.collectIMDBRank();
+									const rank = imdb.getTopRanking();
+									if (rank !== null) {
+										this.rankingHelper.imdbData.rank = rank;
+										this.rankingHelper.imdbData.index = rank;
+									}
 									this.rankingHelper.createRanking(this.rankingHelper.imdbData);
 								}
-								
+
 								if (letterboxd.storage.get('cast-extras-enabled') === true) {
-									this.castHelper.render(this.imdbData.data, this.loggedIn);
+									this.castHelper.render(imdb.data, this.loggedIn);
 								}
 							}
-							this.imdbData.state = 2;
 						});
 
 						// Call BoxOfficeMojo
@@ -818,10 +813,11 @@ const letterboxd = {
 									}
 
 									// Get MyDramaList data
-									if (this.wiki.MDL_ID != null && this.wiki.MDL_ID.value != null && letterboxd.storage.get('mdl-enabled') === true) {
+									// TODO: 
+									/* if (this.wiki.MDL_ID != null && this.wiki.MDL_ID.value != null && letterboxd.storage.get('mdl-enabled') === true) {
 										this.wikiData.MDL_ID = this.wiki.MDL_ID.value;
 										this.myDramaListHelper.getData(this.wiki.MDL_ID.value);
-									}
+									} */
 
 									// Get Kinopoisk data
 									if (this.wiki.Kinopoisk_ID != null && letterboxd.storage.get('kinopoisk-enabled') === true){
@@ -1138,7 +1134,7 @@ const letterboxd = {
 						imdbLink = imdbLink.replace('www.', 'm.');
 					}
 
-					this.imdbData.url = imdbLink + "/";
+					this.imdbURL = imdbLink + "/";
 
 				} else if (links[i].innerHTML === "TMDB") {
 					// Grab the tmdb link
@@ -1168,89 +1164,6 @@ const letterboxd = {
 			}
 
 			this.idsCollected = true;
-		},
-
-		collectIMDBRank(){
-			let ratingsSummary = this.imdbData.data.title?.ratingsSummary ?? null;
-			if (ratingsSummary != null){
-				this.rankingHelper.imdbData.rank = ratingsSummary.topRanking?.rank ?? 0;
-				this.rankingHelper.imdbData.index = this.rankingHelper.imdbData.rank;
-			}
-		},
-
-		addIMDBScore() {
-			if (document.querySelector('.imdb-ratings')) return;
-
-			if (!document.querySelector('.sidebar')) return;
-
-			// Get the score from the IMDb API response
-			//**********************************************/
-			let ratingsSummary = this.imdbData.data.title?.ratingsSummary ?? null;
-			if (ratingsSummary != null){
-				this.imdbData.rating = ratingsSummary.aggregateRating ?? 0;
-				this.imdbData.num_ratings = ratingsSummary.voteCount ?? 0;
-			}
-			let histogramValues = this.imdbData.data.title?.aggregateRatingsBreakdown?.histogram?.histogramValues ?? [];
-			if (histogramValues != null && histogramValues.length > 0){
-				for (var ii = 0; ii < histogramValues.length; ii++) {
-					var index = histogramValues[ii].rating - 1;
-					var votes = histogramValues[ii].voteCount;
-					var percent = ((votes / this.imdbData.num_ratings) * 100).toFixed(1);
-
-					this.imdbData.percents[index] = percent;
-					this.imdbData.votes[index] = votes;
-
-					if (votes > this.imdbData.highest)
-						this.imdbData.highest = votes;
-				}
-			}
-
-			if (this.imdbData.rating == 0 || this.imdbData.num_ratings == 0 || histogramValues.length == 0) {
-				return false;
-			}
-
-			// Add the score to the page
-			//********************************************* */
-			const logoSvg = letterboxd.helpers.createElement('span', {
-				style: 'height: 16px; width: 32px; position: absolute; background-image: url("' + browser.runtime.getURL("images/imdb-logo.svg") + '");'
-			});
-
-			const imdbScoreSection = letterboxd.helpers.createChartSection(
-				'imdb', 
-				{
-					href: this.imdbData.url,
-					style: "position: absolute;",
-					svg: logoSvg
-				},
-				'margin-bottom: 15px !important;',
-			);
-			
-			imdbScoreSection.append(letterboxd.helpers.createHistogram(
-				letterboxd.storage,
-				"imdb", 
-				this.imdbData.url, 
-				this.imdbData.rating, 
-				this.imdbData.num_ratings, 
-				this.imdbData.votes, 
-				this.imdbData.percents, 
-				this.imdbData.highest
-			));
-
-			// Add the tooltip as text for mobile
-			var score = imdbScoreSection.querySelector(".averagerating.tooltip");
-			var tooltip = "";
-			if (score != null) {
-				tooltip = score.getAttribute('data-original-title');
-				letterboxd.helpers.createDetailsText('imdb', imdbScoreSection, tooltip, this.pageState.isMobile);
-			}
-
-			// Append to the sidebar
-			//*****************************************************************
-			this.appendRating(imdbScoreSection, 'imdb-ratings');
-
-			// Add the hover events
-			//*****************************************************************
-			letterboxd.helpers.addTooltipEvents(imdbScoreSection);
 		},
 
 		addLink(url, text, prefix) {
@@ -1289,7 +1202,6 @@ const letterboxd = {
 				'.mdl-button',
 				'.mal-button',
 				'.anilist-button',
-				'.anidb-button',
 				'.filmarks-button',
 				'.criterion-button',
 				'.mojo-button',
@@ -1796,7 +1708,7 @@ const letterboxd = {
 			return showDetails;
 		},
 
-		getSensFilmQuery() {
+		/* getSensFilmQuery() {
 			var query = `
 					query ($id: Int!) {
 						product(id: $id) {
@@ -1814,7 +1726,7 @@ const letterboxd = {
 					}
 				`;
 			return query;
-		},
+		} */
 
 		createElement(tag, attrs, styles) {
 			const element = document.createElement(tag);
@@ -2432,43 +2344,9 @@ const letterboxd = {
 			return Math.round(num * 2) / 2;
 		},
 
-		getTextBetween(text, start, end) {
-			var tempArray = text.split(start);
-			if (tempArray.length >= 2) {
-				tempArray = tempArray[1].split(end);
-
-				return (tempArray[0]);
-			} else {
-				return ""
-			}
-		},
-
 		parseHTML(html) {
 			var parser = new DOMParser();
 			return parser.parseFromString(html, "text/html");
-		},
-
-		getOriginalURL(html) {
-			var output = "";
-			var split = html.split('<meta property="og:url" content="');
-			output = split[1].split('">')[0];
-			return output;
-		},
-
-		fixURL(url) {
-			// replace http with https
-			if (url.includes("http://"))
-				url = url.replace("http://", "https://");
-
-			// Make sure it has https
-			if (!url.startsWith("https://"))
-				url = "https://" + url;
-
-			// Make sure it was www
-			if (!url.includes("www."))
-				url = url.replace("https://", "https://www.");
-
-			return url;
 		},
 
 		createChartSectionElement(sectionID) {
@@ -2522,12 +2400,6 @@ const letterboxd = {
 
 			return chartSection;
 
-		},
-
-		cleanupInnerText(value) {
-			var out = value.replaceAll("\n", "");
-			out = out.trim();
-			return out;
 		},
 
 		cleanNumber(value) {
@@ -2622,66 +2494,6 @@ const letterboxd = {
 			}
 
 			return rating;
-		},
-
-		getImdbQuery(id){
-			// Cast photos and character names are only needed by Cast Extras
-			var credits = '';
-			if (letterboxd.storage.get('cast-extras-enabled') === true) {
-				credits = `
-							credits(first: 50) {
-								edges {
-									node {
-										... on Cast {
-											characters {
-												name
-											}
-											name {
-												nameText {
-													text
-												}
-											}
-										}
-									}
-								}
-							}`;
-			}
-
-			var query = `
-					query GetRatings { 
-						title(id: "${id}") { 
-							ratingsSummary { 
-								aggregateRating 
-								voteCount
-								topRanking {
-									rank
-								}
-							} 
-							aggregateRatingsBreakdown {
-								histogram { 
-									histogramValues { 
-										rating
-										voteCount
-									}
-								}
-							}
-							${credits}
-						}
-					}
-				`;
-			var options = {
-				method: 'POST',
-				headers: {
-					'content-type': 'application/json',
-					'x-imdb-client-name': 'imdb-web-next'
-				},
-				body: JSON.stringify({
-					query,
-					variables: {}
-				})
-			};
-
-			return options;
 		},
 
 		createTableRow(table, label, value1, value2, value3) {
@@ -2825,6 +2637,7 @@ const moduleConfigs = [
 	{ class: MetacriticHelper, target: letterboxd.overview, property: 'metaHelper', args: [] },
 	{ class: RankingHelper, target: letterboxd.overview, property: 'rankingHelper', args: [] },
 	{ class: RottenTomatoesHelper, target: letterboxd.overview, property: 'tomatoHelper', args: [] },
+	{ class: IMDBHelper, target: letterboxd.overview, property: 'imdbHelper', args: [] },
 	{ class: CastHelper, target: letterboxd.overview, property: 'castHelper', args: [] },
 ];
 
