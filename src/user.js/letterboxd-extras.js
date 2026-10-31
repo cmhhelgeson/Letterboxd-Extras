@@ -363,12 +363,13 @@ const letterboxd = {
 			}
 
 			// Get Alt Title List
-			if (this.altTitleList == null && this.altTitleError == false && document.querySelector("div#tab-details") != null){
+			if (this.altTitleList == null && this.altTitleError == false && document.querySelector("#tab-panel-details") != null){
 				try {
-					// Collect Alternate Title List
-					var altTitleList = document.querySelector('div.text-indentedlist p')
+					// Collect Alternate Title List. The rows createDetailsRow adds share the class but are marked 'detail'.
+					var altTitleList = document.querySelector('#tab-panel-details div.text-indentedlist:not(.detail) p')
 					if (altTitleList != null) {
-						this.altTitleList = altTitleList.innerText.split(', ');
+						// The panel is hidden until its tab is opened, so innerText would be empty
+						this.altTitleList = altTitleList.textContent.trim().split(', ');
 					}
 				} catch (error) {
 					this.altTitleError = true;
